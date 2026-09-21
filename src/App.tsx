@@ -25,6 +25,8 @@ const seedScores:Score[]=[
 ];
 
 type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string };
+declare global { interface Window { __studentosData?: SavedData; __studentosEmail?: string; __studentosUserId?: string } }
+
 
 function blankData():SavedData{
  return {
