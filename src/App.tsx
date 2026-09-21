@@ -150,6 +150,7 @@ function App(){
  const [error,setError]=useState("");
  const [authOpen,setAuthOpen]=useState(false);
  const [anonymousSetupOpen,setAnonymousSetupOpen]=useState(false);
+ const [accountSetupOpen,setAccountSetupOpen]=useState(false);
  const [authMode,setAuthMode]=useState<"signin"|"signup">("signin");
 
  useEffect(()=>{
@@ -160,7 +161,7 @@ function App(){
    if(data.session&&active){
     const user=data.session.user; const cloud=await loadCloudData(user.id);
     window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
-    setMode("account");setScreen("app");
+    sessionStorage.removeItem("studentos_pending_signup"); setMode("account");setScreen("app");
    }
    setLoading(false);
   };
@@ -168,29 +169,28 @@ function App(){
   if(!supabase)return;
   const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
    if(!session)return;
-   void (async()=>{
-    const user=session.user; const cloud=await loadCloudData(user.id);
-    window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
-    if(active){setMode("account");setScreen("app");setAuthOpen(false);setLoading(false);}
-   })();
+   void (async()=>{if(active){await finishCloudSession(session.user);setLoading(false);}})();
   });
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
 
  const enterAnonymous=()=>{setAnonymousSetupOpen(true)};
+ const finishAccountSetup=async(displayName:string,journey:string,classLevel:string)=>{const data={...(window.__studentosData||blankData()),displayName:displayName.trim()||"Student",journey:journey.trim()||"Make meaningful progress",classLevel:classLevel.trim()};window.__studentosData=data;setAccountSetupOpen(false);if(window.__studentosUserId)await saveCloudData(window.__studentosUserId,data)};
  const finishAnonymousSetup=(displayName:string,journey:string,classLevel:string)=>{const data=blankData();data.displayName=displayName.trim()||"Student";data.journey=journey.trim()||"Make meaningful progress";data.classLevel=classLevel.trim();window.__studentosData=data;window.__studentosEmail="";window.__studentosUserId="";setAnonymousSetupOpen(false);setMode("anonymous");setScreen("app")};
  const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
 
- const finishCloudSession=async(user:{id:string;email?:string|null})=>{const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;setMode("account");setScreen("app");setAuthOpen(false)};
+ const finishCloudSession=async(user:{id:string;email?:string|null})=>{const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;const needsSetup=sessionStorage.getItem("studentos_pending_signup")==="1";sessionStorage.removeItem("studentos_pending_signup");setMode("account");setScreen("app");setAuthOpen(false);if(needsSetup)setAccountSetupOpen(true)};
 
  const social=async(provider:"google"|"azure")=>{
   setError("");
+  if(authMode==="signup")sessionStorage.setItem("studentos_pending_signup","1");else sessionStorage.removeItem("studentos_pending_signup");
   if(!supabase){setError("Cloud sign-in needs the StudentOS Supabase project connected.");return;}
   const {error:e}=await supabase.auth.signInWithOAuth({provider,options:{redirectTo:window.location.origin,scopes:provider==="azure"?"email":undefined}});
   if(e)setError(e.message);
  };
  const emailAuth=async(email:string,code?:string):Promise<boolean>=>{
   setError("");
+  if(!code){if(authMode==="signup")sessionStorage.setItem("studentos_pending_signup","1");else sessionStorage.removeItem("studentos_pending_signup");}
   if(!supabase){setError("Supabase is not connected yet. Add the StudentOS Supabase environment variables first.");return false;}
   if(code){
    const result=await supabase.auth.verifyOtp({email,token:code.trim(),type:"email"});
@@ -208,12 +208,12 @@ function App(){
  return <div className="welcome-shell">
   <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={enterAnonymous}>Try anonymously</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
   <Welcome onAnonymous={enterAnonymous} openAuth={(m)=>{setAuthMode(m);setAuthOpen(true)}} onSocial={social} error={error}/>
-  {anonymousSetupOpen&&<AnonymousSetupModal close={()=>setAnonymousSetupOpen(false)} continueSetup={finishAnonymousSetup}/>}
+  {anonymousSetupOpen&&<AnonymousSetupModal close={()=>setAnonymousSetupOpen(false)} continueSetup={finishAnonymousSetup} account={false}/>} {accountSetupOpen&&<AnonymousSetupModal close={()=>setAccountSetupOpen(false)} continueSetup={finishAccountSetup} account={true}/>}
   {authOpen&&<AuthModal mode={authMode} setMode={setAuthMode} close={()=>{setAuthOpen(false);setError("")}} onSocial={social} onEmail={emailAuth} error={error}/>}
  </div>
 }
 
-function AnonymousSetupModal(p:{close:()=>void;continueSetup:(displayName:string,journey:string,classLevel:string)=>void}){const [name,setName]=useState(""),[journey,setJourney]=useState(""),[classLevel,setClassLevel]=useState("");return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal setup-modal" onMouseDown={e=>e.stopPropagation()}><button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button><div className="auth-icon"><Command size={22}/></div><h1>Let's set up your StudentOS</h1><p>You're continuing anonymously, so we'll personalize your workspace without creating an account.</p><label className="field"><span>What should we call you?</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoFocus/></label><label className="field"><span>What would you like to name your journey?</span><input value={journey} onChange={e=>setJourney(e.target.value)} placeholder="e.g. 90%+ Mission, Road to Engineering"/></label><label className="field"><span>What class / year are you in?</span><input value={classLevel} onChange={e=>setClassLevel(e.target.value)} placeholder="e.g. Class 10"/></label><button className="primary-btn auth-submit reference-continue" onClick={()=>p.continueSetup(name,journey,classLevel)} disabled={!name.trim()||!journey.trim()}>Enter StudentOS <ChevronRight size={17}/></button><small className="auth-note">Anonymous mode stays on this device/session and is not saved to a cloud account.</small></div></div>}
+function AnonymousSetupModal(p:{close:()=>void;continueSetup:(displayName:string,journey:string,classLevel:string)=>void|Promise<void>;account:boolean}){const [name,setName]=useState(""),[journey,setJourney]=useState(""),[classLevel,setClassLevel]=useState("");return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal setup-modal" onMouseDown={e=>e.stopPropagation()}><button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button><div className="auth-icon"><Command size={22}/></div><h1>{p.account?"Welcome to StudentOS":"Let's set up your StudentOS"}</h1><p>{p.account?"Your account is ready. Tell us a little about yourself so we can personalize your workspace.":"You're continuing anonymously, so we'll personalize your workspace without creating an account."}</p><label className="field"><span>What should we call you?</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoFocus/></label><label className="field"><span>What would you like to name your journey?</span><input value={journey} onChange={e=>setJourney(e.target.value)} placeholder="e.g. 90%+ Mission, Road to Engineering"/></label><label className="field"><span>What class / year are you in?</span><input value={classLevel} onChange={e=>setClassLevel(e.target.value)} placeholder="e.g. Class 10"/></label><button className="primary-btn auth-submit reference-continue" onClick={()=>p.continueSetup(name,journey,classLevel)} disabled={!name.trim()||!journey.trim()}>Enter StudentOS <ChevronRight size={17}/></button><small className="auth-note">{p.account?"You can change these preferences anytime in Settings.":"Anonymous mode stays on this device/session and is not saved to a cloud account."}</small></div></div>}
 
 function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,code?:string)=>Promise<boolean>;error:string}){
  const [email,setEmail]=useState(""),[code,setCode]=useState(""),[codeSent,setCodeSent]=useState(false);
