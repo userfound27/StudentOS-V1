@@ -135,3 +135,15 @@
 .task-action:hover{color:#f4f7fa;border-color:#586474;background:#1b222d;transform:translateY(-1px)}
 .task-action.danger:hover{color:#ff9a83;border-color:#704236;background:#2a1c1a}
 @media(max-width:600px){.task-actions{opacity:1}.task-action{width:28px;height:28px}.task-row{gap:8px}.task-row .minutes{margin-left:auto}.task-row .grow{min-width:0}.task-row .grow strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-editor { display: flex; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.profile-editor label { display: grid; gap: 7px; min-width: min(100%, 260px); color: var(--ink, #172033); font-size: 13px; font-weight: 700; }
+.profile-image-button { width: 86px; height: 86px; border: 1px dashed #c6cedc; border-radius: 18px; background: #f8fafc; color: #536175; cursor: pointer; display: grid; place-items: center; gap: 3px; overflow: hidden; font: inherit; font-size: 11px; font-weight: 700; }
+.profile-image-button img { width: 100%; height: 100%; object-fit: cover; grid-row: 1; grid-column: 1; }
+.profile-image-button span { display: flex; align-items: center; gap: 3px; grid-row: 1; grid-column: 1; background: rgba(255,255,255,.86); border-radius: 8px; padding: 4px 6px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.danger-btn { border: 1px solid #f3b5b5; background: #fff5f5; color: #b42318; border-radius: 10px; padding: 9px 12px; cursor: pointer; font: inherit; font-weight: 700; }
+.danger-btn:disabled { opacity: .65; cursor: wait; }
