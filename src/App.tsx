@@ -181,24 +181,26 @@ function App(){
  const finishAnonymousSetup=(displayName:string,journey:string,classLevel:string)=>{const data=blankData();data.displayName=displayName.trim()||"Student";data.journey=journey.trim()||"Make meaningful progress";data.classLevel=classLevel.trim();window.__studentosData=data;window.__studentosEmail="";window.__studentosUserId="";setAnonymousSetupOpen(false);setMode("anonymous");setScreen("app")};
  const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
 
+ const finishCloudSession=async(user:{id:string;email?:string|null})=>{const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;setMode("account");setScreen("app");setAuthOpen(false)};
+
  const social=async(provider:"google"|"azure")=>{
   setError("");
   if(!supabase){setError("Cloud sign-in needs the StudentOS Supabase project connected.");return;}
   const {error:e}=await supabase.auth.signInWithOAuth({provider,options:{redirectTo:window.location.origin,scopes:provider==="azure"?"email":undefined}});
   if(e)setError(e.message);
  };
- const emailAuth=async(email:string,code?:string)=>{
+ const emailAuth=async(email:string,code?:string):Promise<boolean>=>{
   setError("");
-  if(!supabase){setError("Supabase is not connected yet. Add the StudentOS Supabase environment variables first.");return;}
+  if(!supabase){setError("Supabase is not connected yet. Add the StudentOS Supabase environment variables first.");return false;}
   if(code){
    const result=await supabase.auth.verifyOtp({email,token:code.trim(),type:"email"});
-   if(result.error){setError(result.error.message);return;}
-   if(result.data.session){const user=result.data.session.user;const cloud=await loadCloudData(user.id);window.__studentosData=cloud;window.__studentosEmail=user.email||email;window.__studentosUserId=user.id;setMode("account");setScreen("app");setAuthOpen(false);}
-   return;
+   if(result.error){setError(result.error.message);return false;}
+   if(result.data.session?.user){await finishCloudSession(result.data.session.user);return true;}
+   setError("Verification succeeded, but no active session was returned. Please try again.");return false;
   }
   const result=await supabase.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:window.location.origin}});
-  if(result.error){setError(result.error.message);return;}
-  setError("CODE_SENT");
+  if(result.error){setError(result.error.message);return false;}
+  return true;
  };
 
  if(loading)return <div className="welcome-shell auth-loading"><div><div className="auth-icon"><Command size={24}/></div><strong>Loading StudentOS…</strong></div></div>;
@@ -213,11 +215,11 @@ function App(){
 
 function AnonymousSetupModal(p:{close:()=>void;continueSetup:(displayName:string,journey:string,classLevel:string)=>void}){const [name,setName]=useState(""),[journey,setJourney]=useState(""),[classLevel,setClassLevel]=useState("");return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal setup-modal" onMouseDown={e=>e.stopPropagation()}><button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button><div className="auth-icon"><Command size={22}/></div><h1>Let's set up your StudentOS</h1><p>You're continuing anonymously, so we'll personalize your workspace without creating an account.</p><label className="field"><span>What should we call you?</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoFocus/></label><label className="field"><span>What would you like to name your journey?</span><input value={journey} onChange={e=>setJourney(e.target.value)} placeholder="e.g. 90%+ Mission, Road to Engineering"/></label><label className="field"><span>What class / year are you in?</span><input value={classLevel} onChange={e=>setClassLevel(e.target.value)} placeholder="e.g. Class 10"/></label><button className="primary-btn auth-submit reference-continue" onClick={()=>p.continueSetup(name,journey,classLevel)} disabled={!name.trim()||!journey.trim()}>Enter StudentOS <ChevronRight size={17}/></button><small className="auth-note">Anonymous mode stays on this device/session and is not saved to a cloud account.</small></div></div>}
 
-function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,code?:string)=>void;error:string}){
+function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,code?:string)=>Promise<boolean>;error:string}){
  const [email,setEmail]=useState(""),[code,setCode]=useState(""),[codeSent,setCodeSent]=useState(false);
  const errorIsSent=p.error==="CODE_SENT";
- const sendCode=()=>{if(!email.trim())return;p.onEmail(email.trim());setCodeSent(true)};
- const verify=()=>{if(code.trim().length!==6)return;p.onEmail(email.trim(),code.trim())};
+ const sendCode=async()=>{if(!email.trim())return;const ok=await p.onEmail(email.trim());if(ok)setCodeSent(true)};
+ const verify=async()=>{if(code.trim().length!==6)return;await p.onEmail(email.trim(),code.trim())};
  return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal auth-reference-modal" onMouseDown={e=>e.stopPropagation()}>
   <button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button>
   <div className="auth-icon"><Command size={22}/></div>
