@@ -24,7 +24,7 @@ const seedScores:Score[]=[
  {id:3,subject:"English",test:"Periodic Test",obtained:37,max:40,date:"2026-09-10"}
 ];
 
-type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string; classLevel:string };
+type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string; classLevel:string; displayName:string };
 declare global { interface Window { __studentosData?: SavedData; __studentosEmail?: string; __studentosUserId?: string } }
 
 
@@ -33,7 +33,7 @@ function blankData():SavedData{
   tasks:seedTasks.map(x=>({...x})),
   exams:seedExams.map(x=>({...x})),
   scores:seedScores.map(x=>({...x})),
-  journey:"Make meaningful progress", classLevel:""
+  journey:"Make meaningful progress", classLevel:"", displayName:"Student"
  };
 }
 
@@ -80,7 +80,7 @@ function StudentOSApp({mode,onExit}:{mode:"anonymous"|"account";onExit:()=>void}
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
   <main className="main">
-   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title={mode==="anonymous"?"Open profile settings":"Sign out"}>{mode==="account"?window.__studentosEmail?.slice(0,1).toUpperCase():"A"}</button></div></header>
+   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title={mode==="anonymous"?"Open profile settings":"Sign out"}>{(mode==="account"?window.__studentosEmail?.slice(0,1):initial.displayName?.slice(0,1))?.toUpperCase()||"S"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))}/>} 
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
@@ -145,6 +145,7 @@ function App(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  const [authOpen,setAuthOpen]=useState(false);
+ const [anonymousSetupOpen,setAnonymousSetupOpen]=useState(false);
  const [authMode,setAuthMode]=useState<"signin"|"signup">("signin");
 
  useEffect(()=>{
@@ -172,7 +173,8 @@ function App(){
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
 
- const enterAnonymous=()=>{window.__studentosData=blankData();window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("app")};
+ const enterAnonymous=()=>{setAnonymousSetupOpen(true)};
+ const finishAnonymousSetup=(displayName:string,journey:string,classLevel:string)=>{const data=blankData();data.displayName=displayName.trim()||"Student";data.journey=journey.trim()||"Make meaningful progress";data.classLevel=classLevel.trim();window.__studentosData=data;window.__studentosEmail="";window.__studentosUserId="";setAnonymousSetupOpen(false);setMode("anonymous");setScreen("app")};
  const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
 
  const social=async(provider:"google"|"azure")=>{
@@ -195,9 +197,12 @@ function App(){
  return <div className="welcome-shell">
   <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={enterAnonymous}>Try anonymously</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
   <Welcome onAnonymous={enterAnonymous} openAuth={(m)=>{setAuthMode(m);setAuthOpen(true)}} onSocial={social} error={error}/>
+  {anonymousSetupOpen&&<AnonymousSetupModal close={()=>setAnonymousSetupOpen(false)} continueSetup={finishAnonymousSetup}/>}
   {authOpen&&<AuthModal mode={authMode} setMode={setAuthMode} close={()=>{setAuthOpen(false);setError("")}} onSocial={social} onEmail={emailAuth} error={error}/>}
  </div>
 }
+
+function AnonymousSetupModal(p:{close:()=>void;continueSetup:(displayName:string,journey:string,classLevel:string)=>void}){const [name,setName]=useState(""),[journey,setJourney]=useState(""),[classLevel,setClassLevel]=useState("");return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal setup-modal" onMouseDown={e=>e.stopPropagation()}><button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button><div className="auth-icon"><Command size={22}/></div><h1>Let's set up your StudentOS</h1><p>You're continuing anonymously, so we'll personalize your workspace without creating an account.</p><label className="field"><span>What should we call you?</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoFocus/></label><label className="field"><span>What would you like to name your journey?</span><input value={journey} onChange={e=>setJourney(e.target.value)} placeholder="e.g. 90%+ Mission, Road to Engineering"/></label><label className="field"><span>What class / year are you in?</span><input value={classLevel} onChange={e=>setClassLevel(e.target.value)} placeholder="e.g. Class 10"/></label><button className="primary-btn auth-submit reference-continue" onClick={()=>p.continueSetup(name,journey,classLevel)} disabled={!name.trim()||!journey.trim()}>Enter StudentOS <ChevronRight size={17}/></button><small className="auth-note">Anonymous mode stays on this device/session and is not saved to a cloud account.</small></div></div>}
 
 function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,password:string,kind:"signin"|"signup")=>void;error:string}){
  const [email,setEmail]=useState(""),[password,setPassword]=useState("");
