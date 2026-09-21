@@ -82,7 +82,7 @@ function StudentOSApp({mode,onExit}:{mode:"anonymous"|"account";onExit:()=>void}
   <main className="main">
    <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title={mode==="anonymous"?"Open profile settings":"Sign out"}>{mode==="account"?window.__studentosEmail?.slice(0,1).toUpperCase():"A"}</button></div></header>
    <div className="content">
-    {page==="dashboard"&&<Dashboard journey={journey} classLevel={initial.classLevel||""} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)}/>}
+    {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)}/>}
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
     {page==="exams"&&<Exams exams={exams} setExams={setExams} onAdd={()=>setShowExam(true)}/>}
     {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
@@ -192,7 +192,7 @@ function App(){
  if(loading)return <div className="welcome-shell auth-loading"><div><div className="auth-icon"><Command size={24}/></div><strong>Loading StudentOS…</strong></div></div>;
  if(screen==="app")return <StudentOSApp mode={mode} onExit={exit}/>;
  return <div className="welcome-shell">
-  <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={()=>{setAuthMode("signin");setAuthOpen(true)}}>Sign in</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
+  <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={enterAnonymous}>Try anonymously</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
   <Welcome onAnonymous={enterAnonymous} openAuth={(m)=>{setAuthMode(m);setAuthOpen(true)}} onSocial={social} error={error}/>
   {authOpen&&<AuthModal mode={authMode} setMode={setAuthMode} close={()=>{setAuthOpen(false);setError("")}} onSocial={social} onEmail={emailAuth} error={error}/>}
  </div>
@@ -200,18 +200,21 @@ function App(){
 
 function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,password:string,kind:"signin"|"signup")=>void;error:string}){
  const [email,setEmail]=useState(""),[password,setPassword]=useState("");
- return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal" onMouseDown={e=>e.stopPropagation()}>
-  <button className="auth-close icon-btn" onClick={p.close}><X size={18}/></button>
-  <div className="auth-icon"><Command size={22}/></div><div className="auth-tabs"><button className={p.mode==="signin"?"active":""} onClick={()=>p.setMode("signin")}>Sign in</button><button className={p.mode==="signup"?"active":""} onClick={()=>p.setMode("signup")}>Sign up</button></div>
-  <h1>{p.mode==="signin"?"Welcome back.":"Create your StudentOS."}</h1><p>{p.mode==="signin"?"Pick up where you left off.":"Create a free account and keep your school system synced."}</p>
-  <button className="social-btn google-auth" onClick={()=>p.onSocial("google")}><span className="google-g">G</span> Continue with Google</button>
-  <button className="social-btn microsoft-auth" onClick={()=>p.onSocial("azure")}><span>⊞</span> Continue with Microsoft</button>
-  <div className="auth-divider"><span>or use email</span></div>
-  <label className="field"><span>Email</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
-  <label className="field"><span>Password</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters"/></label>
-  <button className="primary-btn auth-submit" onClick={()=>p.onEmail(email,password,p.mode)}>{p.mode==="signin"?"Sign in":"Create account"} <ChevronRight size={17}/></button>
+ const isSignup=p.mode==="signup";
+ return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal auth-reference-modal" onMouseDown={e=>e.stopPropagation()}>
+  <button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button>
+  <div className="auth-icon"><Command size={22}/></div>
+  <h1>Log in or sign up</h1>
+  <p>Save your StudentOS workspace in the cloud and pick up where you left off on any device.</p>
+  <button className="social-btn google-auth" onClick={()=>p.onSocial("google")}><span className="google-g">G</span> Continue with Google <ChevronRight size={16}/></button>
+  <button className="social-btn microsoft-auth" onClick={()=>p.onSocial("azure")}><span className="microsoft-mark">⊞</span> Continue with Microsoft <ChevronRight size={16}/></button>
+  <div className="auth-divider"><span>OR</span></div>
+  <label className="field"><span>Email address</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" autoComplete="email"/></label>
+  {email&&<label className="field"><span>Password</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={isSignup?"Create a password":"Your password"} autoComplete={isSignup?"new-password":"current-password"}/></label>}
+  <button className="primary-btn auth-submit reference-continue" onClick={()=>email&&password?p.onEmail(email,password,p.mode):setPassword("")}>Continue <ChevronRight size={17}/></button>
+  <div className="auth-switch">{isSignup?<><span>Already have an account?</span><button onClick={()=>p.setMode("signin")}>Log in</button></>:<><span>New to StudentOS?</span><button onClick={()=>p.setMode("signup")}>Sign up</button></>}</div>
   {p.error&&<div className="auth-error">{p.error}</div>}
-  <small className="auth-note">Free to use. Anonymous mode is always available without an account.</small>
+  <small className="auth-note">Anonymous mode stays local and is not saved. Signed-in mode syncs your StudentOS data to your account.</small>
  </div></div>
 }
 
@@ -223,7 +226,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
     <div className="hero-kicker"><span className="welcome-dot"/> PERSONAL ACADEMIC COMMAND CENTER</div>
     <h1>Make school feel <span>lighter.</span><br/>Make progress feel <span>visible.</span></h1>
     <p>Plan your work, understand your progress, prepare for what is next, and keep your long-term direction in one beautiful student workspace.</p>
-    <div className="hero-cta-row"><button className="primary-btn welcome-primary" onClick={()=>p.openAuth("signup")}>Get started free <ChevronRight size={18}/></button><button className="ghost-btn welcome-secondary" onClick={()=>p.openAuth("signin")}>Sign in</button></div>
+    <div className="hero-cta-row"><button className="primary-btn welcome-primary" onClick={()=>p.openAuth("signup")}>Get started <ChevronRight size={18}/></button><button className="ghost-btn welcome-secondary" onClick={p.onAnonymous}>Try anonymously</button></div>
     <div className="trust-row"><span>✓ No credit card</span><span>✓ Anonymous mode</span><span>✓ Cloud sync when signed in</span></div>
    </div>
    <div className="hero-product reveal-delay">
