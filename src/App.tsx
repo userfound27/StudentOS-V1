@@ -65,7 +65,7 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
  useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
  const completed=tasks.filter(t=>t.done).length;
  const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
- const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{if(mode==="anonymous")navigate("settings");else onExit()};
+ const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{navigate("settings")};
  return <div className="app-shell">
   <aside className={(mobileNav?"sidebar open ":"sidebar ")+(sidebarCollapsed?"collapsed":"")}>
    <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Collapse sidebar" onClick={()=>{setSidebarCollapsed(!sidebarCollapsed);setMobileNav(false)}}>{sidebarCollapsed?<ChevronRight size={18}/>:<X size={18}/>}</button></div>
@@ -80,7 +80,7 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
   <main className="main">
-   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title={mode==="anonymous"?"Open profile settings":"Sign out"}>{(mode==="account"?window.__studentosEmail?.slice(0,1):initial.displayName?.slice(0,1))?.toUpperCase()||"S"}</button></div></header>
+   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{(mode==="account"?window.__studentosEmail?.slice(0,1):initial.displayName?.slice(0,1))?.toUpperCase()||"S"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))}/>} 
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
