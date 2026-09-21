@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode, Dispatch, SetStateAction } from "react";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Plus, Settings, Sparkles, Target, Trophy, TrendingUp, X, Zap } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Plus, Settings, Sparkles, Target, Trophy, TrendingUp, X, Zap } from "lucide-react";
 
 type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
 type Task = { id:number; title:string; subject:string; date:string; done:boolean; minutes:number };
@@ -34,7 +34,7 @@ export default function App(){
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)};
  return <div className="app-shell">
   <aside className={mobileNav?"sidebar open":"sidebar"}>
-   <div className="brand"><div className="brand-mark"><Sparkles size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" onClick={()=>setMobileNav(false)}><X size={18}/></button></div>
+   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" onClick={()=>setMobileNav(false)}><X size={18}/></button></div>
    <nav>
     <NavItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={page==="dashboard"} onClick={()=>navigate("dashboard")}/>
     <NavItem icon={<BookOpen size={18}/>} label="Study" active={page==="study"} onClick={()=>navigate("study")}/>
@@ -63,6 +63,7 @@ export default function App(){
  </div>
 }
 
+function FeatureCard(p:{number:string;icon:ReactNode;title:string;text:string}){return <article className="feature-card"><div className="feature-top"><span>{p.number}</span><div className="feature-icon">{p.icon}</div></div><h4>{p.title}</h4><p>{p.text}</p><div className="feature-line"/></article>}
 function NavItem(p:{icon:ReactNode;label:string;active:boolean;onClick:()=>void}){return <button className={p.active?"nav-item active":"nav-item"} onClick={p.onClick}>{p.icon}<span>{p.label}</span>{p.active&&<ChevronRight size={15}/>}</button>}
 function Dashboard(p:{journey:string;completed:number;tasks:Task[];exams:Exam[];scoreAverage:number;navigate:(x:Page)=>void;setTasks:Dispatch<SetStateAction<Task[]>>;onAddTask:()=>void}){
  const todayTasks=p.tasks.filter(t=>t.date===today);
