@@ -88,7 +88,7 @@ function StudentOSApp({mode,onExit}:{mode:"anonymous"|"account";onExit:()=>void}
     {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
     {page==="focus"&&<Focus seconds={focusSeconds} running={focusRunning} setRunning={setFocusRunning} reset={()=>{setFocusRunning(false);setFocusSeconds(1500)}}/>}
     {page==="journey"&&<Journey journey={journey} setJourney={setJourney} completed={completed} exams={exams} scoreAverage={scoreAverage}/>}
-    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney}/>}
+    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel}/>}
    </div>
   </main>
   {showTask&&<TaskModal close={()=>setShowTask(false)} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
