@@ -126,3 +126,39 @@
     width: 100%;
   }
 }
+/* Screenshot follow-up: force the profile controls to keep the intended geometry and contrast */
+.settings-panel .profile-editor > label {
+  color: #cbd2df !important;
+}
+.settings-panel .profile-editor > label .setting-input {
+  color: #eef2ff;
+  background: #0b0f16;
+}
+.settings-panel .profile-image-button {
+  width: 104px !important;
+  height: 104px !important;
+  min-width: 104px;
+  max-width: 104px;
+  min-height: 104px;
+  max-height: 104px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
+  padding: 0;
+  overflow: hidden;
+}
+.settings-panel .profile-image-button img {
+  width: 104px !important;
+  height: 104px !important;
+  min-width: 104px;
+  min-height: 104px;
+  max-width: 104px;
+  max-height: 104px;
+  border-radius: 50% !important;
+}
+.settings-panel .profile-image-button span {
+  bottom: 8px;
+  max-width: calc(100% - 12px);
+  min-width: 0;
+  padding: 5px 7px;
+  font-size: 8px;
+}
