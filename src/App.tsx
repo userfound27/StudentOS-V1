@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode, Dispatch, SetStateAction } from "react";
 import { supabase } from "./lib/supabase";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Pencil, Plus, Settings, Sparkles, Target, Trash2, Trophy, TrendingUp, X, Zap } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Pencil, Plus, LogOut, Settings, Sparkles, Target, Trash2, Trophy, TrendingUp, Upload, UserRound, X, Zap } from "lucide-react";
 
 type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
 type Task = { id:number; title:string; subject:string; date:string; done:boolean; minutes:number };
@@ -24,7 +24,7 @@ const seedScores:Score[]=[
  {id:3,subject:"English",test:"Periodic Test",obtained:37,max:40,date:"2026-09-10"}
 ];
 
-type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string; classLevel:string; displayName:string };
+type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string; classLevel:string; displayName:string; avatarUrl:string };
 declare global { interface Window { __studentosData?: SavedData; __studentosEmail?: string; __studentosUserId?: string } }
 
 
@@ -33,7 +33,7 @@ function blankData():SavedData{
   tasks:seedTasks.map(x=>({...x})),
   exams:seedExams.map(x=>({...x})),
   scores:seedScores.map(x=>({...x})),
-  journey:"Make meaningful progress", classLevel:"", displayName:"Student"
+  journey:"Make meaningful progress", classLevel:"", displayName:"Student", avatarUrl:""
  };
 }
 
@@ -50,22 +50,23 @@ async function saveCloudData(userId:string,data:SavedData){
  if(error) console.error(error);
 }
 
-function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:()=>void;onSignIn:()=>void}){
+function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"account";onExit:()=>Promise<void>|void;onSignIn:()=>void;onDeleteAccount:()=>Promise<string>}){
  const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false);
  const initial=window.__studentosData||blankData();
  const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
- const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
+ const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[displayName,setDisplayName]=useState(initial.displayName||"Student"),[avatarUrl,setAvatarUrl]=useState(initial.avatarUrl||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
  const [focusSeconds,setFocusSeconds]=useState(1500),[focusRunning,setFocusRunning]=useState(false),[accountError,setAccountError]=useState("");
  useEffect(()=>{
   if(mode!=="account"||!window.__studentosUserId)return;
-  const payload={tasks,exams,scores,journey,classLevel,displayName:initial.displayName||"Student"};
+  const payload={tasks,exams,scores,journey,classLevel,displayName,avatarUrl};
   const timer=window.setTimeout(()=>{void saveCloudData(window.__studentosUserId!,payload)},250);
   return()=>window.clearTimeout(timer);
- },[mode,tasks,exams,scores,journey,classLevel]);
+ },[mode,tasks,exams,scores,journey,classLevel,displayName,avatarUrl]);
  useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
  const completed=tasks.filter(t=>t.done).length;
  const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{navigate("settings")};
+ const saveProfile=async(name:string,file?:File)=>{if(mode!=="account"||!supabase||!window.__studentosUserId)return "Sign in to update your profile.";const nextName=name.trim().slice(0,60);if(!nextName)return "Enter a display name.";let nextAvatar=avatarUrl;if(file){if(!file.type.startsWith("image/"))return "Choose an image file.";if(file.size>5*1024*1024)return "Choose an image smaller than 5 MB.";const {error:uploadError}=await supabase.storage.from("studentos-avatars").upload(window.__studentosUserId+"/avatar",file,{upsert:true,contentType:file.type,cacheControl:"3600"});if(uploadError)return uploadError.message;const {data:urlData}=supabase.storage.from("studentos-avatars").getPublicUrl(window.__studentosUserId+"/avatar");nextAvatar=urlData.publicUrl+"?v="+Date.now();}const {error:authError}=await supabase.auth.updateUser({data:{display_name:nextName,avatar_url:nextAvatar}});if(authError)return authError.message;setDisplayName(nextName);setAvatarUrl(nextAvatar);return "";};
  return <div className="app-shell">
   <aside className={(mobileNav?"sidebar open ":"sidebar ")+(sidebarCollapsed?"collapsed":"")}>
    <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Collapse sidebar" onClick={()=>{setSidebarCollapsed(!sidebarCollapsed);setMobileNav(false)}}>{sidebarCollapsed?<ChevronRight size={18}/>:<X size={18}/>}</button></div>
@@ -80,7 +81,7 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
   <main className="main">
-   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{(mode==="account"?window.__studentosEmail?.slice(0,1):initial.displayName?.slice(0,1))?.toUpperCase()||"S"}</button></div></header>
+   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{avatarUrl?<img src={avatarUrl} alt="Profile"/>:displayName.slice(0,1).toUpperCase()||"S"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))}/>} 
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
@@ -88,7 +89,7 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
     {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
     {page==="focus"&&<Focus seconds={focusSeconds} running={focusRunning} setRunning={setFocusRunning} reset={()=>{setFocusRunning(false);setFocusSeconds(1500)}}/>}
     {page==="journey"&&<Journey journey={journey} setJourney={setJourney} completed={completed} exams={exams} scoreAverage={scoreAverage}/>}
-    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} onSignIn={()=>{if(!supabase){setAccountError("Supabase is not connected yet. Sign up & sync will be available after the StudentOS Supabase environment is configured.");return;}setAccountError("");onSignIn()}} accountError={accountError}/>}
+    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} displayName={displayName} avatarUrl={avatarUrl} onProfileSave={saveProfile} onLogout={onExit} onDeleteAccount={onDeleteAccount} onSignIn={()=>{if(!supabase){setAccountError("Supabase is not connected yet. Sign up & sync will be available after the StudentOS Supabase environment is configured.");return;}setAccountError("");onSignIn()}} accountError={accountError}/>}
    </div>
   </main>
   {showTask&&<TaskModal close={()=>{setShowTask(false);setEditingTask(null)}} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
@@ -118,18 +119,25 @@ function Exams(p:{exams:Exam[];setExams:Dispatch<SetStateAction<Exam[]>>;onAdd:(
 function Scores(p:{scores:Score[];setScores:Dispatch<SetStateAction<Score[]>>;onAdd:()=>void}){const total=p.scores.reduce((a,s)=>a+s.obtained,0),max=p.scores.reduce((a,s)=>a+s.max,0);return <div className="stack"><PageIntro title="Score tracker" text="Record marks and watch your progress build over time." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add score</button>}/><div className="stats-grid"><Stat icon={<Gauge/>} label="Overall recorded" value={(max?Math.round(total/max*100):0)+"%"}/><Stat icon={<Trophy/>} label="Tests recorded" value={String(p.scores.length)}/></div><section className="panel"><div className="panel-head"><div><h3>Recent scores</h3><p>Your recorded assessments.</p></div></div><div className="score-table"><div className="score-row head"><span>Subject</span><span>Assessment</span><span>Marks</span><span>Percent</span><span/></div>{p.scores.map(s=><div className="score-row" key={s.id}><strong>{s.subject}</strong><span>{s.test}</span><span>{s.obtained+"/"+s.max}</span><strong>{Math.round(s.obtained/s.max*100)+"%"}</strong><button className="icon-btn" onClick={()=>p.setScores(all=>all.filter(x=>x.id!==s.id))}><X size={15}/></button></div>)}</div></section></div>}
 function Focus(p:{seconds:number;running:boolean;setRunning:(x:boolean)=>void;reset:()=>void}){const m=Math.floor(p.seconds/60).toString().padStart(2,"0"),s=(p.seconds%60).toString().padStart(2,"0");return <div className="focus-page"><div className="focus-card"><div className="hero-kicker"><Clock3 size={15}/> FOCUS MODE</div><h2>{m+":"+s}</h2><p>One focused block. One clear objective.</p><div className="focus-actions"><button className="primary-btn" onClick={()=>p.setRunning(!p.running)}>{p.running?"Pause":"Start focus"}</button><button className="ghost-btn" onClick={p.reset}>Reset</button></div><div className="focus-note"><Zap size={17}/> 25-minute Pomodoro · no subscription required</div></div></div>}
 function Journey(p:{journey:string;setJourney:(s:string)=>void;completed:number;exams:Exam[];scoreAverage:number}){const [editing,setEditing]=useState(false),[draft,setDraft]=useState(p.journey);return <div className="stack"><PageIntro title="Your journey" text="Give the next phase of school a name that means something to you."/><section className="journey-card"><div className="journey-badge"><Target size={27}/></div><div className="grow"><span className="eyebrow">CURRENT JOURNEY</span>{editing?<div className="inline-edit"><input value={draft} onChange={e=>setDraft(e.target.value)}/><button className="primary-btn small" onClick={()=>{p.setJourney(draft);setEditing(false)}}>Save</button></div>:<h2>{p.journey}</h2>}<p>Keep this objective visible when deciding what deserves your attention.</p></div>{!editing&&<button className="ghost-btn" onClick={()=>setEditing(true)}>Edit</button>}</section><div className="journey-grid"><Stat icon={<Check/>} label="Study sessions done" value={String(p.completed)}/><Stat icon={<TrendingUp/>} label="Recorded score level" value={p.scoreAverage+"%"}/><Stat icon={<CalendarDays/>} label="Exams on radar" value={String(p.exams.length)}/></div></div>}
-function SettingsPage(p:{journey:string;setJourney:(s:string)=>void;classLevel:string;setClassLevel:(s:string)=>void;mode:"anonymous"|"account";onSignIn:()=>void;accountError:string}){
- const [objective,setObjective]=useState(p.journey),[grade,setGrade]=useState(p.classLevel);
+function SettingsPage(p:{journey:string;setJourney:(s:string)=>void;classLevel:string;setClassLevel:(s:string)=>void;mode:"anonymous"|"account";onSignIn:()=>void;accountError:string;displayName:string;avatarUrl:string;onProfileSave:(name:string,file?:File)=>Promise<string>;onLogout:()=>Promise<void>|void;onDeleteAccount:()=>Promise<string>}) {
+ const [objective,setObjective]=useState(p.journey),[grade,setGrade]=useState(p.classLevel),[name,setName]=useState(p.displayName),[profileMessage,setProfileMessage]=useState(""),[savingProfile,setSavingProfile]=useState(false),[deleting,setDeleting]=useState(false);
+ const fileInput=useRef<HTMLInputElement>(null);
+ const saveProfile=async()=>{setSavingProfile(true);const message=await p.onProfileSave(name,fileInput.current?.files?.[0]);setProfileMessage(message||"Profile saved.");setSavingProfile(false);if(!message&&fileInput.current)fileInput.current.value="";};
+ const deleteAccount=async()=>{if(!window.confirm("Permanently delete your StudentOS account and all saved data? This cannot be undone."))return;setDeleting(true);const message=await p.onDeleteAccount();setDeleting(false);setProfileMessage(message);};
  return <div className="stack"><PageIntro title="Settings" text="Make StudentOS yours. Your profile choices shape what you see."/>
  <section className="panel settings-panel">
+  {p.mode==="account"&&<SettingBlock title="Your profile" text="Update your name or choose a new profile image. Images are saved under your account." right={<button className="ghost-btn" disabled={savingProfile} onClick={saveProfile}>{savingProfile?"Saving…":"Save profile"}</button>}>
+   <div className="profile-editor"><button className="profile-image-button" type="button" onClick={()=>fileInput.current?.click()}>{p.avatarUrl?<img src={p.avatarUrl} alt="Profile preview"/>:<UserRound size={28}/>}<span><Upload size={14}/> Change image</span></button><input ref={fileInput} className="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif"/><label>Display name<input className="setting-input" value={name} maxLength={60} onChange={e=>setName(e.target.value)} placeholder="Your name"/></label></div>{profileMessage&&<div className={profileMessage==="Profile saved."?"auth-success":"auth-error settings-auth-error"}>{profileMessage}</div>}
+  </SettingBlock>}
   <SettingBlock title="Profile & preferences" text="Choose the class or grade you want StudentOS to display. You can change this anytime." right={<span className="status-pill"><span className="dot"/> Personalised</span>}>
    <div className="preference-row"><label>Class / grade<select className="setting-input" value={grade} onChange={e=>{setGrade(e.target.value);p.setClassLevel(e.target.value)}}><option value="">Not set</option>{Array.from({length:12},(_,i)=><option key={i+1} value={String(i+1)}>Class {i+1}</option>)}<option value="College">College</option></select></label></div>
   </SettingBlock>
   <SettingBlock title="Session mode" text={p.mode==="account"?"Your StudentOS workspace is connected to your account and syncs your changes.":"Anonymous mode keeps this session in memory only. Sign up anytime to keep your workspace across sessions."} right={<span className="status-pill"><span className="dot"/> {p.mode==="account"?"Account synced":"Anonymous"}</span>}/>
   <SettingBlock title="Journey objective" text="This is the main objective shown around StudentOS." right={<button className="ghost-btn" onClick={()=>p.setJourney(objective)}>Save</button>}><input className="setting-input" value={objective} onChange={e=>setObjective(e.target.value)}/></SettingBlock>
-  <SettingBlock title="Account & sync" text={p.mode==="account"?"Your account is connected. StudentOS saves your workspace to the cloud as you make changes.":"Create or sign in to an account to keep your StudentOS workspace synced across sessions."} right={p.mode==="account"?<span className="status-pill"><span className="dot"/> Synced</span>:<button className="primary-btn setting-signin" onClick={p.onSignIn}>Sign up & sync <ChevronRight size={15}/></button>}>
+  <SettingBlock title="Account & sync" text={p.mode==="account"?"Your account is connected. StudentOS saves your workspace to the cloud as you make changes.":"Create or sign in to an account to keep your StudentOS workspace synced across sessions."} right={p.mode==="account"?<button className="ghost-btn" onClick={()=>void p.onLogout()}><LogOut size={15}/> Log out</button>:<button className="primary-btn setting-signin" onClick={p.onSignIn}>Sign up & sync <ChevronRight size={15}/></button>}>
    {p.accountError&&<div className="auth-error settings-auth-error">{p.accountError}</div>}
   </SettingBlock>
+  {p.mode==="account"&&<SettingBlock title="Delete account" text="Permanently remove your account, synced workspace, and profile image. This cannot be undone." right={<button className="danger-btn" disabled={deleting} onClick={deleteAccount}>{deleting?"Deleting…":"Delete account"}</button>}/>}
   <SettingBlock title="Data" text={p.mode==="account"?"Your tasks, exams, scores, journey and profile preferences are stored in your account database.":"Anonymous data stays in memory and is not uploaded to a cloud account."} right={<span className="muted">{p.mode==="account"?"Cloud saved":"Local only"}</span>}/>
  </section></div>
 }
@@ -178,6 +186,7 @@ function App(){
  const finishAccountSetup=async(displayName:string,journey:string,classLevel:string)=>{const data={...(window.__studentosData||blankData()),displayName:displayName.trim()||"Student",journey:journey.trim()||"Make meaningful progress",classLevel:classLevel.trim()};window.__studentosData=data;setAccountSetupOpen(false);if(window.__studentosUserId)await saveCloudData(window.__studentosUserId,data)};
  const finishAnonymousSetup=(displayName:string,journey:string,classLevel:string)=>{const data=blankData();data.displayName=displayName.trim()||"Student";data.journey=journey.trim()||"Make meaningful progress";data.classLevel=classLevel.trim();window.__studentosData=data;window.__studentosEmail="";window.__studentosUserId="";setAnonymousSetupOpen(false);setMode("anonymous");setScreen("app")};
  const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
+ const deleteAccount=async()=>{if(!supabase)return "Supabase is not connected.";const {error:deleteError}=await supabase.functions.invoke("delete-studentos-account",{method:"POST"});if(deleteError)return deleteError.message||"Account deletion failed.";await exit();return "";};
 
  const finishCloudSession=async(user:{id:string;email?:string|null})=>{const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;const needsSetup=sessionStorage.getItem("studentos_pending_signup")==="1";sessionStorage.removeItem("studentos_pending_signup");setMode("account");setScreen("app");setAuthOpen(false);if(needsSetup)setAccountSetupOpen(true)};
 
@@ -204,7 +213,7 @@ function App(){
  };
 
  if(loading)return <div className="welcome-shell auth-loading"><div><div className="auth-icon"><Command size={24}/></div><strong>Loading StudentOS…</strong></div></div>;
- if(screen==="app")return <StudentOSApp mode={mode} onExit={exit} onSignIn={()=>{setAuthMode("signup");setAuthOpen(true);setScreen("welcome")}}/>;
+ if(screen==="app")return <StudentOSApp mode={mode} onExit={exit} onDeleteAccount={deleteAccount} onSignIn={()=>{setAuthMode("signup");setAuthOpen(true);setScreen("welcome")}}/>;
  return <div className="welcome-shell">
   <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={enterAnonymous}>Try anonymously</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
   <Welcome onAnonymous={enterAnonymous} openAuth={(m)=>{setAuthMode(m);setAuthOpen(true)}} onSocial={social} error={error}/>
