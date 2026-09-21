@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="StudentOS"><rect width="64" height="64" rx="16" fill="#ff704c"/><path d="M23 23h7v7h-7a7 7 0 1 1-7-7 7 7 0 0 1 7-7v7Zm18 18h-7v-7h7a7 7 0 1 1 7 7 7 7 0 0 1-7 7v-7ZM30 30h4v4h-4zM41 23h-7v7h7a7 7 0 1 0 7-7 7 7 0 0 0-7-7v7ZM23 41h7v-7h-7a7 7 0 1 0-7 7 7 7 0 0 0 7 7v-7Z" fill="#182534"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="16" fill="#ff6845"/>
+<g fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round">
+<path d="M25 17a8 8 0 1 0 0 16h14a8 8 0 1 1 0 16"/>
+<path d="M39 17a8 8 0 1 1 0 16H25a8 8 0 1 0 0 16"/>
+</g>
+</svg>
