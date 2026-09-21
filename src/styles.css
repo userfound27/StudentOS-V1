@@ -103,3 +103,23 @@
 .auth-modal{position:relative;max-height:90vh;overflow:auto}.auth-close{position:absolute;right:16px;top:16px}.auth-tabs{display:flex;gap:4px;background:#172532;border:1px solid #35485a;border-radius:10px;padding:4px;margin:8px 0 20px}.auth-tabs button{flex:1;border:0;background:transparent;color:#8fa0b1;border-radius:7px;padding:9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}.auth-tabs button.active{background:#30465a;color:#fff}.social-btn{width:100%;border-radius:9px;padding:12px 14px;font:inherit;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;margin-top:8px}.google-auth{background:#fff;color:#17212b;border:1px solid #d8dee5}.microsoft-auth{background:#2b3e51;color:#fff;border:1px solid #4a6074}.google-g{font-family:Arial;font-size:18px}.preference-row label{display:grid;gap:6px;color:#7d8c9c;font-size:10px;margin-top:10px}.preference-row .setting-input{margin:0;max-width:240px}
 @media(max-width:900px){.showcase-grid{grid-template-columns:1fr;gap:25px}.welcome-hero{min-height:0}.chip-one{left:2%}.chip-two{right:2%}}
 @media(max-width:760px){.welcome-nav{padding:0 18px}.nav-auth-link{display:none}.nav-auth-btn{padding:9px 11px}.hero-cta-row>*{flex:1}.trust-row{gap:9px}.product-window{transform:none}.hero-product{min-height:380px}.float-chip{display:none}.showcase-grid{padding:20px 0;margin-top:45px}.showcase-copy h2{font-size:40px}.stacked-cards{height:300px}.float-card{width:220px}.card-b{right:0}.card-c{left:35px}}
+
+/* Reference-style auth flow */
+.auth-reference-modal{width:min(460px,calc(100vw - 32px));padding:34px 30px 26px;text-align:center;border-radius:22px;background:#2b2b2b;border:1px solid #505050;box-shadow:0 35px 100px rgba(0,0,0,.5)}
+.auth-reference-modal .auth-icon{margin:0 auto 18px;background:#ff704c;color:#18222c}
+.auth-reference-modal h1{font-size:28px;letter-spacing:-.8px;margin:0 0 10px;color:#f4f7fa}
+.auth-reference-modal>p{font-size:12px;line-height:1.55;color:#b9c2ca;margin:0 auto 22px;max-width:350px}
+.auth-reference-modal .social-btn{height:56px;margin-top:12px;border-radius:28px;justify-content:center;position:relative;font-size:14px}
+.auth-reference-modal .social-btn svg{position:absolute;right:19px}
+.auth-reference-modal .google-auth{background:#202020;color:#f5f5f5;border:1px solid #5b5b5b}
+.auth-reference-modal .microsoft-auth{background:#202020;color:#f5f5f5;border:1px solid #5b5b5b}
+.auth-reference-modal .google-g{font-size:19px}
+.microsoft-mark{font-size:20px;line-height:1}
+.auth-reference-modal .auth-divider{margin:20px 0 14px;color:#c0c0c0}
+.auth-reference-modal .field{text-align:left}
+.auth-reference-modal .field input{background:#111;border:1px solid #555;border-radius:28px;height:52px;padding:0 18px}
+.auth-reference-modal .reference-continue{width:100%;justify-content:center;height:54px;border-radius:28px;margin-top:12px;background:#f5f5f5;color:#171717;box-shadow:none}
+.auth-reference-modal .reference-continue:hover{background:#fff;transform:translateY(-1px)}
+.auth-switch{display:flex;justify-content:center;gap:6px;margin-top:17px;color:#aeb7c0;font-size:11px}
+.auth-switch button{border:0;background:none;color:#fff;font:inherit;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.auth-reference-modal .auth-note{display:block;color:#8e989f;font-size:9px;line-height:1.5;margin-top:18px}
