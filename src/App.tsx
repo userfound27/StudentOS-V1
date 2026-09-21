@@ -218,3 +218,5 @@ function Welcome(p:{onAnonymous:()=>void;onLogin:(provider:"google"|"azure")=>vo
 }
 
 function pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
+
+export default App;
