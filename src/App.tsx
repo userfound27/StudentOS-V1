@@ -23,18 +23,28 @@ const seedScores:Score[]=[
  {id:3,subject:"English",test:"Periodic Test",obtained:37,max:40,date:"2026-09-10"}
 ];
 
-export default function App(){
- const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false);
- const [tasks,setTasks]=useState(seedTasks),[exams,setExams]=useState(seedExams),[scores,setScores]=useState(seedScores);
- const [journey,setJourney]=useState("Finish Class 10 strong"),[showTask,setShowTask]=useState(false),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
+type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string };
+type Account = { email:string; passwordHash:string; data:SavedData };\ndeclare global { interface Window { __studentosData?:SavedData; __studentosEmail?:string } }
+const ACCOUNT_KEY = "studentos_accounts_v1";
+
+function loadAccounts():Account[]{ try{return JSON.parse(localStorage.getItem(ACCOUNT_KEY)||"[]")}catch{return []} }
+function saveAccounts(accounts:Account[]){ localStorage.setItem(ACCOUNT_KEY,JSON.stringify(accounts)); }
+async function hashPassword(password:string){ const bytes=new TextEncoder().encode(password); const hash=await crypto.subtle.digest("SHA-256",bytes); return Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function blankData():SavedData{return {tasks:seedTasks.map(x=>({...x})),exams:seedExams.map(x=>({...x})),scores:seedScores.map(x=>({...x})),journey:"Finish Class 10 strong"}}
+function accountData(email:string):SavedData{const a=loadAccounts().find(x=>x.email===email);return a?.data?JSON.parse(JSON.stringify(a.data)):blankData()}
+\nfunction StudentOSApp({mode,onExit}:{mode:"anonymous"|"account";onExit:()=>void}){
+ const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+ const initial=mode==="account"&&window.__studentosData?window.__studentosData:blankData();\n const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
+ const [journey,setJourney]=useState(initial.journey),[showTask,setShowTask]=useState(false),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
  const [focusSeconds,setFocusSeconds]=useState(1500),[focusRunning,setFocusRunning]=useState(false);
+ useEffect(()=>{if(mode!=="account"||!window.__studentosEmail)return;const accounts=loadAccounts();const i=accounts.findIndex(a=>a.email===window.__studentosEmail);if(i>=0){accounts[i].data={tasks,exams,scores,journey};saveAccounts(accounts)}},[mode,tasks,exams,scores,journey]);
  useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
  const completed=tasks.filter(t=>t.done).length;
  const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)};
  return <div className="app-shell">
-  <aside className={mobileNav?"sidebar open":"sidebar"}>
-   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" onClick={()=>setMobileNav(false)}><X size={18}/></button></div>
+  <aside className={(mobileNav?"sidebar open ":"sidebar ")+(sidebarCollapsed?"collapsed":"")}>
+   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Collapse sidebar" onClick={()=>{setSidebarCollapsed(!sidebarCollapsed);setMobileNav(false)}}>{sidebarCollapsed?<ChevronRight size={18}/>:<X size={18}/>}</button></div>
    <nav>
     <NavItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={page==="dashboard"} onClick={()=>navigate("dashboard")}/>
     <NavItem icon={<BookOpen size={18}/>} label="Study" active={page==="study"} onClick={()=>navigate("study")}/>
@@ -46,7 +56,7 @@ export default function App(){
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
   <main className="main">
-   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/> Anonymous session</div><button className="avatar" onClick={()=>navigate("settings")}>A</button></div></header>
+   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={onExit} title="Exit to start screen">{mode==="account"?window.__studentosEmail?.slice(0,1).toUpperCase():"A"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)}/>}
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
@@ -94,4 +104,32 @@ function FormInput(p:{label:string;value:string;onChange:(s:string)=>void;placeh
 function TaskModal(p:{close:()=>void;add:(t:Task)=>void}){const [title,setTitle]=useState(""),[subject,setSubject]=useState("Maths"),[minutes,setMinutes]=useState("30");return <Modal title="Add study session" close={p.close}><FormInput label="Session" value={title} onChange={setTitle} placeholder="e.g. Trigonometry practice"/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Minutes" value={minutes} onChange={setMinutes} type="number"/><ModalActions close={p.close} save={()=>p.add({id:Date.now(),title:title||"Untitled study session",subject,date:today,done:false,minutes:Number(minutes)||30})}/></Modal>}
 function ScoreModal(p:{close:()=>void;add:(s:Score)=>void}){const [subject,setSubject]=useState("Maths"),[test,setTest]=useState(""),[obtained,setObtained]=useState(""),[max,setMax]=useState("40");return <Modal title="Record a score" close={p.close}><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Assessment" value={test} onChange={setTest} placeholder="Unit test"/><div className="form-two"><FormInput label="Marks" value={obtained} onChange={setObtained} type="number"/><FormInput label="Out of" value={max} onChange={setMax} type="number"/></div><ModalActions close={p.close} save={()=>p.add({id:Date.now(),subject,test:test||"Assessment",obtained:Number(obtained)||0,max:Number(max)||40,date:today})}/></Modal>}
 function ExamModal(p:{close:()=>void;add:(e:Exam)=>void}){const [name,setName]=useState(""),[subject,setSubject]=useState("Maths"),[date,setDate]=useState("2026-10-15"),[portion,setPortion]=useState("");return <Modal title="Add exam" close={p.close}><FormInput label="Exam name" value={name} onChange={setName}/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Date" value={date} onChange={setDate} type="date"/><FormInput label="Portion" value={portion} onChange={setPortion} placeholder="Chapters / topics"/><ModalActions close={p.close} save={()=>p.add({id:Date.now(),name:name||"New exam",subject,date,portion:portion||"Portion not added yet",progress:0})}/></Modal>}
-function pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
+function App(){
+ const [screen,setScreen]=useState<"welcome"|"login"|"app">("welcome");
+ const [mode,setMode]=useState<"anonymous"|"account">("anonymous");
+ const [error,setError]=useState("");
+ const enterAnonymous=()=>{window.__studentosData=blankData();window.__studentosEmail="";setMode("anonymous");setScreen("app")};
+ const exit=()=>{window.__studentosData=undefined;window.__studentosEmail="";setScreen("welcome")};
+ const enterAccount=(data:SavedData,email:string)=>{window.__studentosData=data;window.__studentosEmail=email;setMode("account");setScreen("app")};
+ if(screen==="app") return <StudentOSApp mode={mode} onExit={exit}/>;
+ return <div className="welcome-shell">
+  <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><span>your school operating system</span></header>
+  {screen==="welcome"?<Welcome onAnonymous={enterAnonymous} onLogin={()=>{setError("");setScreen("login")}}/>:<LoginScreen onBack={()=>setScreen("welcome")} onAnonymous={enterAnonymous} onLogin={enterAccount} error={error} setError={setError}/>}
+ </div>
+}
+
+function Welcome(p:{onAnonymous:()=>void;onLogin:()=>void}){return <main className="welcome-main">
+ <section className="welcome-hero"><div className="welcome-copy"><div className="hero-kicker"><span className="welcome-dot"/> PERSONAL ACADEMIC COMMAND CENTER</div><h1>Make the next move <span>obvious.</span></h1><p>StudentOS brings your study plan, exams, scores, focus time, and long-term journey into one simple command center.</p><div className="welcome-actions"><button className="primary-btn welcome-primary" onClick={p.onLogin}>Get started with login <ChevronRight size={18}/></button><button className="ghost-btn welcome-secondary" onClick={p.onAnonymous}>Continue anonymously</button></div><small>Anonymous = no data saved · Login = your data saved on this device</small></div><div className="workspace-preview"><div className="preview-label">LIVE WORKSPACE</div><div className="preview-target">YOUR TARGET<strong>90<span>%</span></strong><small>Set your mission and start moving.</small></div><div className="preview-cards"><div/><div/><div/></div></div></section>
+ <section className="how-section welcome-how"><div className="how-heading"><div><div className="hero-kicker"><Sparkles size={15}/> HOW STUDENTOS WORKS</div><h3>One place. Six moves.</h3><p>Start with the objective, then use each tool when you need it.</p></div></div><div className="how-grid">
+ <FeatureCard number="01" icon={<Target/>} title="Set your goals" text="Choose the mission you're working toward and keep it visible."/>
+ <FeatureCard number="02" icon={<BookOpen/>} title="Track your study" text="Turn your syllabus into small sessions and mark them done."/>
+ <FeatureCard number="03" icon={<CalendarDays/>} title="Manage exams" text="Add exams, portions, and preparation progress."/>
+ <FeatureCard number="04" icon={<TrendingUp/>} title="Track scores" text="Record marks and see your recorded performance."/>
+ <FeatureCard number="05" icon={<Clock3/>} title="Stay focused" text="Use the 25-minute focus timer to turn plans into work."/>
+ <FeatureCard number="06" icon={<Flame/>} title="Build your journey" text="Keep your long-term objective and progress in view."/>
+ </div></section>
+ </main>}
+function LoginScreen(p:{onBack:()=>void;onAnonymous:()=>void;onLogin:(data:SavedData,email:string)=>void;error:string;setError:(s:string)=>void}){const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [loading,setLoading]=useState(false);
+ const submit=async(e:React.FormEvent)=>{e.preventDefault();if(!email.trim()||password.length<6){p.setError("Enter an email and a password with at least 6 characters.");return}setLoading(true);const normalized=email.trim().toLowerCase();const accounts=loadAccounts();const existing=accounts.find(a=>a.email===normalized);const hash=await hashPassword(password);if(existing&&existing.passwordHash!==hash){p.setError("That email is already registered with a different password.");setLoading(false);return}if(!existing){accounts.push({email:normalized,passwordHash:hash,data:blankData()});saveAccounts(accounts)}p.onLogin(existing?.data||blankData(),normalized);setLoading(false)};
+ return <main className="auth-main"><section className="auth-card"><button className="back-link" onClick={p.onBack}><ChevronRight size={16} className="back-icon"/> Back to StudentOS</button><div className="auth-icon"><Command size={24}/></div><div className="hero-kicker">YOUR STUDENTOS ACCOUNT</div><h1>Keep your progress.</h1><p>Log in to save your tasks, exams, scores, and journey on this device.</p><form onSubmit={submit}><FormInput label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email"/><FormInput label="Password" value={password} onChange={setPassword} placeholder="At least 6 characters" type="password"/>{p.error&&<div className="auth-error">{p.error}</div>}<button className="primary-btn auth-submit" type="submit">{loading?"Signing in…":"Continue to StudentOS"} <ChevronRight size={17}/></button></form><div className="auth-divider"><span>or</span></div><button className="ghost-btn auth-anon" onClick={p.onAnonymous}>Use StudentOS anonymously</button><small className="auth-note">Free prototype account: data is saved locally on this device. Cloud sync and OAuth can be connected later.</small></section></main>}
+\nfunction pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
