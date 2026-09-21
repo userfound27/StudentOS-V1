@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode, Dispatch, SetStateAction } from "react";
-import { supabase, isSupabaseConfigured } from "./lib/supabase";
+import { supabase } from "./lib/supabase";
 import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Pencil, Plus, Settings, Sparkles, Target, Trash2, Trophy, TrendingUp, X, Zap } from "lucide-react";
 
 type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
@@ -41,7 +41,7 @@ async function loadCloudData(userId:string):Promise<SavedData>{
  if(!supabase) return blankData();
  const {data,error}=await supabase.from("studentos_profiles").select("data").eq("id",userId).maybeSingle();
  if(error){console.error(error);return blankData();}
- return data?.data ? data.data as SavedData : blankData();
+ return data?.data ? {...blankData(), ...(data.data as Partial<SavedData>)} : blankData();
 }
 
 async function saveCloudData(userId:string,data:SavedData){
@@ -55,10 +55,10 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
  const initial=window.__studentosData||blankData();
  const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
  const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
- const [focusSeconds,setFocusSeconds]=useState(1500),[focusRunning,setFocusRunning]=useState(false);
+ const [focusSeconds,setFocusSeconds]=useState(1500),[focusRunning,setFocusRunning]=useState(false),[accountError,setAccountError]=useState("");
  useEffect(()=>{
   if(mode!=="account"||!window.__studentosUserId)return;
-  const payload={tasks,exams,scores,journey,classLevel};
+  const payload={tasks,exams,scores,journey,classLevel,displayName:initial.displayName||"Student"};
   const timer=window.setTimeout(()=>{void saveCloudData(window.__studentosUserId!,payload)},250);
   return()=>window.clearTimeout(timer);
  },[mode,tasks,exams,scores,journey,classLevel]);
@@ -88,7 +88,7 @@ function StudentOSApp({mode,onExit,onSignIn}:{mode:"anonymous"|"account";onExit:
     {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
     {page==="focus"&&<Focus seconds={focusSeconds} running={focusRunning} setRunning={setFocusRunning} reset={()=>{setFocusRunning(false);setFocusSeconds(1500)}}/>}
     {page==="journey"&&<Journey journey={journey} setJourney={setJourney} completed={completed} exams={exams} scoreAverage={scoreAverage}/>}
-    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} onSignIn={onSignIn}/>}
+    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} onSignIn={()=>{if(!supabase){setAccountError("Supabase is not connected yet. Sign up & sync will be available after the StudentOS Supabase environment is configured.");return;}setAccountError("");onSignIn()}} accountError={accountError}/>}
    </div>
   </main>
   {showTask&&<TaskModal close={()=>{setShowTask(false);setEditingTask(null)}} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
@@ -118,17 +118,18 @@ function Exams(p:{exams:Exam[];setExams:Dispatch<SetStateAction<Exam[]>>;onAdd:(
 function Scores(p:{scores:Score[];setScores:Dispatch<SetStateAction<Score[]>>;onAdd:()=>void}){const total=p.scores.reduce((a,s)=>a+s.obtained,0),max=p.scores.reduce((a,s)=>a+s.max,0);return <div className="stack"><PageIntro title="Score tracker" text="Record marks and watch your progress build over time." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add score</button>}/><div className="stats-grid"><Stat icon={<Gauge/>} label="Overall recorded" value={(max?Math.round(total/max*100):0)+"%"}/><Stat icon={<Trophy/>} label="Tests recorded" value={String(p.scores.length)}/></div><section className="panel"><div className="panel-head"><div><h3>Recent scores</h3><p>Your recorded assessments.</p></div></div><div className="score-table"><div className="score-row head"><span>Subject</span><span>Assessment</span><span>Marks</span><span>Percent</span><span/></div>{p.scores.map(s=><div className="score-row" key={s.id}><strong>{s.subject}</strong><span>{s.test}</span><span>{s.obtained+"/"+s.max}</span><strong>{Math.round(s.obtained/s.max*100)+"%"}</strong><button className="icon-btn" onClick={()=>p.setScores(all=>all.filter(x=>x.id!==s.id))}><X size={15}/></button></div>)}</div></section></div>}
 function Focus(p:{seconds:number;running:boolean;setRunning:(x:boolean)=>void;reset:()=>void}){const m=Math.floor(p.seconds/60).toString().padStart(2,"0"),s=(p.seconds%60).toString().padStart(2,"0");return <div className="focus-page"><div className="focus-card"><div className="hero-kicker"><Clock3 size={15}/> FOCUS MODE</div><h2>{m+":"+s}</h2><p>One focused block. One clear objective.</p><div className="focus-actions"><button className="primary-btn" onClick={()=>p.setRunning(!p.running)}>{p.running?"Pause":"Start focus"}</button><button className="ghost-btn" onClick={p.reset}>Reset</button></div><div className="focus-note"><Zap size={17}/> 25-minute Pomodoro · no subscription required</div></div></div>}
 function Journey(p:{journey:string;setJourney:(s:string)=>void;completed:number;exams:Exam[];scoreAverage:number}){const [editing,setEditing]=useState(false),[draft,setDraft]=useState(p.journey);return <div className="stack"><PageIntro title="Your journey" text="Give the next phase of school a name that means something to you."/><section className="journey-card"><div className="journey-badge"><Target size={27}/></div><div className="grow"><span className="eyebrow">CURRENT JOURNEY</span>{editing?<div className="inline-edit"><input value={draft} onChange={e=>setDraft(e.target.value)}/><button className="primary-btn small" onClick={()=>{p.setJourney(draft);setEditing(false)}}>Save</button></div>:<h2>{p.journey}</h2>}<p>Keep this objective visible when deciding what deserves your attention.</p></div>{!editing&&<button className="ghost-btn" onClick={()=>setEditing(true)}>Edit</button>}</section><div className="journey-grid"><Stat icon={<Check/>} label="Study sessions done" value={String(p.completed)}/><Stat icon={<TrendingUp/>} label="Recorded score level" value={p.scoreAverage+"%"}/><Stat icon={<CalendarDays/>} label="Exams on radar" value={String(p.exams.length)}/></div></div>}
-function SettingsPage(p:{journey:string;setJourney:(s:string)=>void;classLevel:string;setClassLevel:(s:string)=>void;mode:"anonymous"|"account";onSignIn:()=>void}){
+function SettingsPage(p:{journey:string;setJourney:(s:string)=>void;classLevel:string;setClassLevel:(s:string)=>void;mode:"anonymous"|"account";onSignIn:()=>void;accountError:string}){
  const [objective,setObjective]=useState(p.journey),[grade,setGrade]=useState(p.classLevel);
- const cloudAvailable=!!supabase;
  return <div className="stack"><PageIntro title="Settings" text="Make StudentOS yours. Your profile choices shape what you see."/>
  <section className="panel settings-panel">
   <SettingBlock title="Profile & preferences" text="Choose the class or grade you want StudentOS to display. You can change this anytime." right={<span className="status-pill"><span className="dot"/> Personalised</span>}>
    <div className="preference-row"><label>Class / grade<select className="setting-input" value={grade} onChange={e=>{setGrade(e.target.value);p.setClassLevel(e.target.value)}}><option value="">Not set</option>{Array.from({length:12},(_,i)=><option key={i+1} value={String(i+1)}>Class {i+1}</option>)}<option value="College">College</option></select></label></div>
   </SettingBlock>
-  <SettingBlock title="Session mode" text={p.mode==="account"?"Your StudentOS workspace is connected to your account and syncs your changes.":"Anonymous mode keeps this session in memory only. Sign in anytime to keep your workspace across sessions."} right={<span className="status-pill"><span className="dot"/> {p.mode==="account"?"Account synced":"Anonymous"}</span>}/>
+  <SettingBlock title="Session mode" text={p.mode==="account"?"Your StudentOS workspace is connected to your account and syncs your changes.":"Anonymous mode keeps this session in memory only. Sign up anytime to keep your workspace across sessions."} right={<span className="status-pill"><span className="dot"/> {p.mode==="account"?"Account synced":"Anonymous"}</span>}/>
   <SettingBlock title="Journey objective" text="This is the main objective shown around StudentOS." right={<button className="ghost-btn" onClick={()=>p.setJourney(objective)}>Save</button>}><input className="setting-input" value={objective} onChange={e=>setObjective(e.target.value)}/></SettingBlock>
-  <SettingBlock title="Account & sync" text={p.mode==="account"?"Your account is connected. StudentOS saves your workspace to the cloud as you make changes.":cloudAvailable?"Create or sign in to an account to keep your StudentOS data synced across sessions.":"Cloud sync is not configured yet. Try anonymous mode for now."} right={p.mode==="account"?<span className="status-pill"><span className="dot"/> Synced</span>:cloudAvailable?<button className="primary-btn setting-signin" onClick={p.onSignIn}>Sign in / Sign up <ChevronRight size={15}/></button>:<span className="status-pill muted-pill">Not configured</span>}/>
+  <SettingBlock title="Account & sync" text={p.mode==="account"?"Your account is connected. StudentOS saves your workspace to the cloud as you make changes.":"Create or sign in to an account to keep your StudentOS workspace synced across sessions."} right={p.mode==="account"?<span className="status-pill"><span className="dot"/> Synced</span>:<button className="primary-btn setting-signin" onClick={p.onSignIn}>Sign up & sync <ChevronRight size={15}/></button>}>
+   {p.accountError&&<div className="auth-error settings-auth-error">{p.accountError}</div>}
+  </SettingBlock>
   <SettingBlock title="Data" text={p.mode==="account"?"Your tasks, exams, scores, journey and profile preferences are stored in your account database.":"Anonymous data stays in memory and is not uploaded to a cloud account."} right={<span className="muted">{p.mode==="account"?"Cloud saved":"Local only"}</span>}/>
  </section></div>
 }
@@ -186,17 +187,22 @@ function App(){
   const {error:e}=await supabase.auth.signInWithOAuth({provider,options:{redirectTo:window.location.origin,scopes:provider==="azure"?"email":undefined}});
   if(e)setError(e.message);
  };
- const emailAuth=async(email:string,password:string,kind:"signin"|"signup")=>{
+ const emailAuth=async(email:string,code?:string)=>{
   setError("");
-  if(!supabase){setError("Cloud authentication is not configured yet.");return;}
-  const result=kind==="signin"?await supabase.auth.signInWithPassword({email,password}):await supabase.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin}});
+  if(!supabase){setError("Supabase is not connected yet. Add the StudentOS Supabase environment variables first.");return;}
+  if(code){
+   const result=await supabase.auth.verifyOtp({email,token:code.trim(),type:"email"});
+   if(result.error){setError(result.error.message);return;}
+   if(result.data.session){const user=result.data.session.user;const cloud=await loadCloudData(user.id);window.__studentosData=cloud;window.__studentosEmail=user.email||email;window.__studentosUserId=user.id;setMode("account");setScreen("app");setAuthOpen(false);}
+   return;
+  }
+  const result=await supabase.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:window.location.origin}});
   if(result.error){setError(result.error.message);return;}
-  if(kind==="signup"&&!result.data.session){setError("Account created. Check your email to confirm it, then sign in.");return;}
-  if(result.data.session){const user=result.data.session.user;const cloud=await loadCloudData(user.id);window.__studentosData=cloud;window.__studentosEmail=user.email||email;window.__studentosUserId=user.id;setMode("account");setScreen("app");setAuthOpen(false);}
+  setError("CODE_SENT");
  };
 
  if(loading)return <div className="welcome-shell auth-loading"><div><div className="auth-icon"><Command size={24}/></div><strong>Loading StudentOS…</strong></div></div>;
- if(screen==="app")return <StudentOSApp mode={mode} onExit={exit} onSignIn={()=>{setAuthMode("signin");setAuthOpen(true);setScreen("welcome")}}/>;
+ if(screen==="app")return <StudentOSApp mode={mode} onExit={exit} onSignIn={()=>{setAuthMode("signup");setAuthOpen(true);setScreen("welcome")}}/>;
  return <div className="welcome-shell">
   <header className="welcome-nav"><div className="welcome-brand"><div className="brand-mark"><Command size={20}/></div><strong>StudentOS</strong></div><div className="welcome-nav-actions"><button className="nav-auth-link" onClick={enterAnonymous}>Try anonymously</button><button className="nav-auth-btn" onClick={()=>{setAuthMode("signup");setAuthOpen(true)}}>Get started <ChevronRight size={16}/></button></div></header>
   <Welcome onAnonymous={enterAnonymous} openAuth={(m)=>{setAuthMode(m);setAuthOpen(true)}} onSocial={social} error={error}/>
@@ -207,9 +213,11 @@ function App(){
 
 function AnonymousSetupModal(p:{close:()=>void;continueSetup:(displayName:string,journey:string,classLevel:string)=>void}){const [name,setName]=useState(""),[journey,setJourney]=useState(""),[classLevel,setClassLevel]=useState("");return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal setup-modal" onMouseDown={e=>e.stopPropagation()}><button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button><div className="auth-icon"><Command size={22}/></div><h1>Let's set up your StudentOS</h1><p>You're continuing anonymously, so we'll personalize your workspace without creating an account.</p><label className="field"><span>What should we call you?</span><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoFocus/></label><label className="field"><span>What would you like to name your journey?</span><input value={journey} onChange={e=>setJourney(e.target.value)} placeholder="e.g. 90%+ Mission, Road to Engineering"/></label><label className="field"><span>What class / year are you in?</span><input value={classLevel} onChange={e=>setClassLevel(e.target.value)} placeholder="e.g. Class 10"/></label><button className="primary-btn auth-submit reference-continue" onClick={()=>p.continueSetup(name,journey,classLevel)} disabled={!name.trim()||!journey.trim()}>Enter StudentOS <ChevronRight size={17}/></button><small className="auth-note">Anonymous mode stays on this device/session and is not saved to a cloud account.</small></div></div>}
 
-function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,password:string,kind:"signin"|"signup")=>void;error:string}){
- const [email,setEmail]=useState(""),[password,setPassword]=useState("");
- const isSignup=p.mode==="signup";
+function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void;close:()=>void;onSocial:(x:"google"|"azure")=>void;onEmail:(email:string,code?:string)=>void;error:string}){
+ const [email,setEmail]=useState(""),[code,setCode]=useState(""),[codeSent,setCodeSent]=useState(false);
+ const errorIsSent=p.error==="CODE_SENT";
+ const sendCode=()=>{if(!email.trim())return;p.onEmail(email.trim());setCodeSent(true)};
+ const verify=()=>{if(code.trim().length!==6)return;p.onEmail(email.trim(),code.trim())};
  return <div className="modal-backdrop auth-backdrop" onMouseDown={p.close}><div className="auth-card auth-modal auth-reference-modal" onMouseDown={e=>e.stopPropagation()}>
   <button className="auth-close icon-btn" onClick={p.close} aria-label="Close"><X size={18}/></button>
   <div className="auth-icon"><Command size={22}/></div>
@@ -218,12 +226,19 @@ function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void
   <button className="social-btn google-auth" onClick={()=>p.onSocial("google")}><span className="google-g">G</span> Continue with Google <ChevronRight size={16}/></button>
   <button className="social-btn microsoft-auth" onClick={()=>p.onSocial("azure")}><span className="microsoft-mark">⊞</span> Continue with Microsoft <ChevronRight size={16}/></button>
   <div className="auth-divider"><span>OR</span></div>
-  <label className="field"><span>Email address</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" autoComplete="email"/></label>
-  {email&&<label className="field"><span>Password</span><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={isSignup?"Create a password":"Your password"} autoComplete={isSignup?"new-password":"current-password"}/></label>}
-  <button className="primary-btn auth-submit reference-continue" onClick={()=>email&&password?p.onEmail(email,password,p.mode):setPassword("")}>Continue <ChevronRight size={17}/></button>
-  <div className="auth-switch">{isSignup?<><span>Already have an account?</span><button onClick={()=>p.setMode("signin")}>Log in</button></>:<><span>New to StudentOS?</span><button onClick={()=>p.setMode("signup")}>Sign up</button></>}</div>
-  {p.error&&<div className="auth-error">{p.error}</div>}
-  <small className="auth-note">Anonymous mode stays local and is not saved. Signed-in mode syncs your StudentOS data to your account.</small>
+  {!codeSent ? <>
+   <label className="field"><span>Email address</span><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" autoFocus/></label>
+   <button className="primary-btn auth-submit reference-continue" onClick={sendCode} disabled={!email.trim()}>Send verification code <ChevronRight size={17}/></button>
+  </> : <>
+   <label className="field"><span>Verification code</span><input inputMode="numeric" autoComplete="one-time-code" value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="6-digit code" autoFocus/></label>
+   <p className="auth-code-hint">We sent a verification code to <strong>{email}</strong>.</p>
+   <button className="primary-btn auth-submit reference-continue" onClick={verify} disabled={code.length!==6}>Verify & continue <ChevronRight size={17}/></button>
+   <button className="text-btn auth-resend" onClick={sendCode}>Resend code</button>
+   <button className="text-btn auth-change-email" onClick={()=>{setCode("");setCodeSent(false)}}>Use a different email</button>
+  </>}
+  {errorIsSent?<div className="auth-success">Verification code sent. Check your email.</div>:p.error&&<div className="auth-error">{p.error}</div>}
+  <div className="auth-switch">{p.mode==="signup"?<><span>Already have an account?</span><button onClick={()=>p.setMode("signin")}>Log in</button></>:<><span>New to StudentOS?</span><button onClick={()=>p.setMode("signup")}>Sign up</button></>}</div>
+  <small className="auth-note">Email sign-in uses a one-time verification code. No password is required.</small>
  </div></div>
 }
 
