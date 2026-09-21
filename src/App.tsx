@@ -1,0 +1,96 @@
+import { useEffect, useState } from "react";
+import type { ReactNode, Dispatch, SetStateAction } from "react";
+import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Plus, Settings, Sparkles, Target, Trophy, TrendingUp, X, Zap } from "lucide-react";
+
+type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
+type Task = { id:number; title:string; subject:string; date:string; done:boolean; minutes:number };
+type Exam = { id:number; name:string; subject:string; date:string; portion:string; progress:number };
+type Score = { id:number; subject:string; test:string; obtained:number; max:number; date:string };
+const today = new Date().toISOString().slice(0,10);
+const seedTasks:Task[]=[
+ {id:1,title:"Quadratic equations practice",subject:"Maths",date:today,done:false,minutes:45},
+ {id:2,title:"Revise electricity notes",subject:"Science",date:today,done:true,minutes:30},
+ {id:3,title:"Read English chapter",subject:"English",date:today,done:false,minutes:25},
+ {id:4,title:"SST map practice",subject:"SST",date:today,done:false,minutes:35}
+];
+const seedExams:Exam[]=[
+ {id:1,name:"Maths Unit Test",subject:"Maths",date:"2026-10-02",portion:"Quadratic Equations, Arithmetic Progressions",progress:62},
+ {id:2,name:"Science Term Assessment",subject:"Science",date:"2026-10-09",portion:"Electricity, Magnetic Effects",progress:38}
+];
+const seedScores:Score[]=[
+ {id:1,subject:"Science",test:"Periodic Test",obtained:34,max:40,date:"2026-09-10"},
+ {id:2,subject:"SST",test:"Periodic Test",obtained:37,max:40,date:"2026-09-10"},
+ {id:3,subject:"English",test:"Periodic Test",obtained:37,max:40,date:"2026-09-10"}
+];
+
+export default function App(){
+ const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false);
+ const [tasks,setTasks]=useState(seedTasks),[exams,setExams]=useState(seedExams),[scores,setScores]=useState(seedScores);
+ const [journey,setJourney]=useState("Finish Class 10 strong"),[showTask,setShowTask]=useState(false),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
+ const [focusSeconds,setFocusSeconds]=useState(1500),[focusRunning,setFocusRunning]=useState(false);
+ useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
+ const completed=tasks.filter(t=>t.done).length;
+ const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
+ const navigate=(p:Page)=>{setPage(p);setMobileNav(false)};
+ return <div className="app-shell">
+  <aside className={mobileNav?"sidebar open":"sidebar"}>
+   <div className="brand"><div className="brand-mark"><Sparkles size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" onClick={()=>setMobileNav(false)}><X size={18}/></button></div>
+   <nav>
+    <NavItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={page==="dashboard"} onClick={()=>navigate("dashboard")}/>
+    <NavItem icon={<BookOpen size={18}/>} label="Study" active={page==="study"} onClick={()=>navigate("study")}/>
+    <NavItem icon={<CalendarDays size={18}/>} label="Exams" active={page==="exams"} onClick={()=>navigate("exams")}/>
+    <NavItem icon={<TrendingUp size={18}/>} label="Scores" active={page==="scores"} onClick={()=>navigate("scores")}/>
+    <NavItem icon={<Clock3 size={18}/>} label="Focus" active={page==="focus"} onClick={()=>navigate("focus")}/>
+    <NavItem icon={<Target size={18}/>} label="Journey" active={page==="journey"} onClick={()=>navigate("journey")}/>
+   </nav>
+   <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
+  </aside>
+  <main className="main">
+   <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/> Anonymous session</div><button className="avatar" onClick={()=>navigate("settings")}>A</button></div></header>
+   <div className="content">
+    {page==="dashboard"&&<Dashboard journey={journey} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)}/>}
+    {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
+    {page==="exams"&&<Exams exams={exams} setExams={setExams} onAdd={()=>setShowExam(true)}/>}
+    {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
+    {page==="focus"&&<Focus seconds={focusSeconds} running={focusRunning} setRunning={setFocusRunning} reset={()=>{setFocusRunning(false);setFocusSeconds(1500)}}/>}
+    {page==="journey"&&<Journey journey={journey} setJourney={setJourney} completed={completed} exams={exams} scoreAverage={scoreAverage}/>}
+    {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney}/>}
+   </div>
+  </main>
+  {showTask&&<TaskModal close={()=>setShowTask(false)} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
+  {showScore&&<ScoreModal close={()=>setShowScore(false)} add={s=>{setScores(x=>[...x,s]);setShowScore(false)}}/>}
+  {showExam&&<ExamModal close={()=>setShowExam(false)} add={e=>{setExams(x=>[...x,e]);setShowExam(false)}}/>}
+ </div>
+}
+
+function NavItem(p:{icon:ReactNode;label:string;active:boolean;onClick:()=>void}){return <button className={p.active?"nav-item active":"nav-item"} onClick={p.onClick}>{p.icon}<span>{p.label}</span>{p.active&&<ChevronRight size={15}/>}</button>}
+function Dashboard(p:{journey:string;completed:number;tasks:Task[];exams:Exam[];scoreAverage:number;navigate:(x:Page)=>void;setTasks:Dispatch<SetStateAction<Task[]>>;onAddTask:()=>void}){
+ const todayTasks=p.tasks.filter(t=>t.date===today);
+ return <div className="stack">
+  <section className="hero-card"><div><div className="hero-kicker"><Sparkles size={15}/> YOUR PERSONAL OPERATING SYSTEM FOR SCHOOL</div><h2>Turn school into a <span>mission.</span></h2><p>Plan your work, track your progress, and know exactly what to do next.</p><button className="primary-btn" onClick={()=>p.navigate("study")}>Open today's plan <ChevronRight size={17}/></button></div><div className="hero-orbit"><div><GraduationCap size={34}/><strong>10</strong><span>Class</span></div></div></section>
+  <div className="section-heading"><div><h3>Today</h3><p>Your next actions, without the clutter.</p></div><button className="ghost-btn" onClick={p.onAddTask}><Plus size={16}/> Add task</button></div>
+  <section className="stats-grid"><Stat icon={<Target/>} label="Main priority" value={p.journey}/><Stat icon={<Check/>} label="Study tasks" value={p.completed+"/"+p.tasks.length+" complete"}/><Stat icon={<TrendingUp/>} label="Score average" value={p.scoreAverage+"%"}/><Stat icon={<CalendarDays/>} label="Upcoming exams" value={String(p.exams.length)}/></section>
+  <div className="two-col">
+   <section className="panel"><div className="panel-head"><div><h3>Today's study plan</h3><p>{todayTasks.length} sessions scheduled</p></div><button className="text-btn" onClick={()=>p.navigate("study")}>View all</button></div><div className="task-list">{todayTasks.map(t=><TaskRow key={t.id} task={t} toggle={()=>p.setTasks(all=>all.map(x=>x.id===t.id?{...x,done:!x.done}:x))}/>)}</div></section>
+   <section className="panel"><div className="panel-head"><div><h3>Upcoming exams</h3><p>Keep your portions moving.</p></div><button className="text-btn" onClick={()=>p.navigate("exams")}>View all</button></div>{p.exams.map(e=><div className="exam-mini" key={e.id}><div className="date-box"><strong>{new Date(e.date+"T12:00:00").getDate()}</strong><span>{new Date(e.date+"T12:00:00").toLocaleString("en",{month:"short"})}</span></div><div className="grow"><strong>{e.name}</strong><span>{e.subject+" · "+e.progress+"% prepared"}</span><div className="progress"><i style={{width:e.progress+"%"}}/></div></div></div>)}</section>
+  </div>
+  <section className="mission-strip"><div className="mission-icon"><Flame size={22}/></div><div><span>CURRENT FOCUS</span><strong>{p.journey}</strong></div><button onClick={()=>p.navigate("journey")}>Open journey <ChevronRight size={16}/></button></section>
+ </div>
+}
+function Study(p:{tasks:Task[];setTasks:Dispatch<SetStateAction<Task[]>>;onAdd:()=>void}){const [filter,setFilter]=useState("All");const subjects=["All",...Array.from(new Set(p.tasks.map(t=>t.subject)))];const shown=filter==="All"?p.tasks:p.tasks.filter(t=>t.subject===filter);return <div className="stack"><PageIntro title="Study command center" text="Turn your syllabus into small, finishable sessions." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add study session</button>}/><div className="filter-row">{subjects.map(s=><button key={s} className={filter===s?"filter active":"filter"} onClick={()=>setFilter(s)}>{s}</button>)}</div><section className="panel"><div className="panel-head"><div><h3>Study sessions</h3><p>Tap a session when it is done.</p></div><span className="count-pill">{shown.filter(t=>t.done).length+"/"+shown.length}</span></div><div className="task-list large">{shown.map(t=><TaskRow key={t.id} task={t} toggle={()=>p.setTasks(all=>all.map(x=>x.id===t.id?{...x,done:!x.done}:x))} detailed/>)}</div></section></div>}
+function Exams(p:{exams:Exam[];setExams:Dispatch<SetStateAction<Exam[]>>;onAdd:()=>void}){return <div className="stack"><PageIntro title="Exam control" text="Know what's coming and how ready you actually are." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add exam</button>}/><div className="exam-grid">{p.exams.map(e=><section className="panel exam-card" key={e.id}><div className="exam-card-top"><div className="date-box"><strong>{new Date(e.date+"T12:00:00").getDate()}</strong><span>{new Date(e.date+"T12:00:00").toLocaleString("en",{month:"short"})}</span></div><button className="icon-btn" onClick={()=>p.setExams(all=>all.filter(x=>x.id!==e.id))}><X size={16}/></button></div><span className="tag">{e.subject}</span><h3>{e.name}</h3><p>{e.portion}</p><div className="progress-label"><span>Preparation</span><strong>{e.progress+"%"}</strong></div><div className="progress"><i style={{width:e.progress+"%"}}/></div></section>)}</div></div>}
+function Scores(p:{scores:Score[];setScores:Dispatch<SetStateAction<Score[]>>;onAdd:()=>void}){const total=p.scores.reduce((a,s)=>a+s.obtained,0),max=p.scores.reduce((a,s)=>a+s.max,0);return <div className="stack"><PageIntro title="Score tracker" text="Record marks and watch your progress build over time." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add score</button>}/><div className="stats-grid"><Stat icon={<Gauge/>} label="Overall recorded" value={(max?Math.round(total/max*100):0)+"%"}/><Stat icon={<Trophy/>} label="Tests recorded" value={String(p.scores.length)}/></div><section className="panel"><div className="panel-head"><div><h3>Recent scores</h3><p>Your recorded assessments.</p></div></div><div className="score-table"><div className="score-row head"><span>Subject</span><span>Assessment</span><span>Marks</span><span>Percent</span><span/></div>{p.scores.map(s=><div className="score-row" key={s.id}><strong>{s.subject}</strong><span>{s.test}</span><span>{s.obtained+"/"+s.max}</span><strong>{Math.round(s.obtained/s.max*100)+"%"}</strong><button className="icon-btn" onClick={()=>p.setScores(all=>all.filter(x=>x.id!==s.id))}><X size={15}/></button></div>)}</div></section></div>}
+function Focus(p:{seconds:number;running:boolean;setRunning:(x:boolean)=>void;reset:()=>void}){const m=Math.floor(p.seconds/60).toString().padStart(2,"0"),s=(p.seconds%60).toString().padStart(2,"0");return <div className="focus-page"><div className="focus-card"><div className="hero-kicker"><Clock3 size={15}/> FOCUS MODE</div><h2>{m+":"+s}</h2><p>One focused block. One clear objective.</p><div className="focus-actions"><button className="primary-btn" onClick={()=>p.setRunning(!p.running)}>{p.running?"Pause":"Start focus"}</button><button className="ghost-btn" onClick={p.reset}>Reset</button></div><div className="focus-note"><Zap size={17}/> 25-minute Pomodoro · no subscription required</div></div></div>}
+function Journey(p:{journey:string;setJourney:(s:string)=>void;completed:number;exams:Exam[];scoreAverage:number}){const [editing,setEditing]=useState(false),[draft,setDraft]=useState(p.journey);return <div className="stack"><PageIntro title="Your journey" text="Give the next phase of school a name that means something to you."/><section className="journey-card"><div className="journey-badge"><Target size={27}/></div><div className="grow"><span className="eyebrow">CURRENT JOURNEY</span>{editing?<div className="inline-edit"><input value={draft} onChange={e=>setDraft(e.target.value)}/><button className="primary-btn small" onClick={()=>{p.setJourney(draft);setEditing(false)}}>Save</button></div>:<h2>{p.journey}</h2>}<p>Keep this objective visible when deciding what deserves your attention.</p></div>{!editing&&<button className="ghost-btn" onClick={()=>setEditing(true)}>Edit</button>}</section><div className="journey-grid"><Stat icon={<Check/>} label="Study sessions done" value={String(p.completed)}/><Stat icon={<TrendingUp/>} label="Recorded score level" value={p.scoreAverage+"%"}/><Stat icon={<CalendarDays/>} label="Exams on radar" value={String(p.exams.length)}/></div></div>}
+function SettingsPage(p:{journey:string;setJourney:(s:string)=>void}){const [objective,setObjective]=useState(p.journey);return <div className="stack"><PageIntro title="Settings" text="Keep your StudentOS setup simple and transparent."/><section className="panel settings-panel"><SettingBlock title="Session mode" text="Anonymous mode keeps this session in memory only. Refreshing the page clears the session data." right={<span className="status-pill"><span className="dot"/> Active</span>}/><SettingBlock title="Journey objective" text="This is the main objective shown around StudentOS." right={<button className="ghost-btn" onClick={()=>p.setJourney(objective)}>Save</button>}><input className="setting-input" value={objective} onChange={e=>setObjective(e.target.value)}/></SettingBlock><SettingBlock title="Account & sync" text="Persistent accounts will use a free-tier backend when configured. No paid service is required by the app architecture." right={<span className="muted">Not connected</span>}/><SettingBlock title="Data" text="Anonymous session data is not written to localStorage or cookies by StudentOS." right={<span className="muted">Session only</span>}/></section></div>}
+function SettingBlock(p:{title:string;text:string;right:ReactNode;children?:ReactNode}){return <div className="setting-block"><div className="grow"><h3>{p.title}</h3><p>{p.text}</p>{p.children}</div><div>{p.right}</div></div>}
+function Stat(p:{icon:ReactNode;label:string;value:string}){return <div className="stat-card"><div className="stat-icon">{p.icon}</div><div><span>{p.label}</span><strong>{p.value}</strong></div></div>}
+function TaskRow(p:{task:Task;toggle:()=>void;detailed?:boolean}){return <div className={p.task.done?"task-row done":"task-row"}><button className="check-btn" onClick={p.toggle}>{p.task.done?<Check size={15}/>:null}</button><div className="grow"><strong>{p.task.title}</strong><span>{p.task.subject+(p.detailed?" · "+p.task.date:"")}</span></div><span className="minutes">{p.task.minutes+"m"}</span></div>}
+function PageIntro(p:{title:string;text:string;action?:ReactNode}){return <div className="page-intro"><div><h2>{p.title}</h2><p>{p.text}</p></div>{p.action}</div>}
+function Modal(p:{title:string;close:()=>void;children:ReactNode}){return <div className="modal-backdrop" onMouseDown={p.close}><div className="modal" onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><h3>{p.title}</h3><button className="icon-btn" onClick={p.close}><X/></button></div>{p.children}</div></div>}
+function ModalActions(p:{close:()=>void;save:()=>void}){return <div className="modal-actions"><button className="ghost-btn" onClick={p.close}>Cancel</button><button className="primary-btn" onClick={p.save}>Save</button></div>}
+function FormInput(p:{label:string;value:string;onChange:(s:string)=>void;placeholder?:string;type?:string}){return <label className="field"><span>{p.label}</span><input type={p.type||"text"} value={p.value} onChange={e=>p.onChange(e.target.value)} placeholder={p.placeholder}/></label>}
+function TaskModal(p:{close:()=>void;add:(t:Task)=>void}){const [title,setTitle]=useState(""),[subject,setSubject]=useState("Maths"),[minutes,setMinutes]=useState("30");return <Modal title="Add study session" close={p.close}><FormInput label="Session" value={title} onChange={setTitle} placeholder="e.g. Trigonometry practice"/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Minutes" value={minutes} onChange={setMinutes} type="number"/><ModalActions close={p.close} save={()=>p.add({id:Date.now(),title:title||"Untitled study session",subject,date:today,done:false,minutes:Number(minutes)||30})}/></Modal>}
+function ScoreModal(p:{close:()=>void;add:(s:Score)=>void}){const [subject,setSubject]=useState("Maths"),[test,setTest]=useState(""),[obtained,setObtained]=useState(""),[max,setMax]=useState("40");return <Modal title="Record a score" close={p.close}><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Assessment" value={test} onChange={setTest} placeholder="Unit test"/><div className="form-two"><FormInput label="Marks" value={obtained} onChange={setObtained} type="number"/><FormInput label="Out of" value={max} onChange={setMax} type="number"/></div><ModalActions close={p.close} save={()=>p.add({id:Date.now(),subject,test:test||"Assessment",obtained:Number(obtained)||0,max:Number(max)||40,date:today})}/></Modal>}
+function ExamModal(p:{close:()=>void;add:(e:Exam)=>void}){const [name,setName]=useState(""),[subject,setSubject]=useState("Maths"),[date,setDate]=useState("2026-10-15"),[portion,setPortion]=useState("");return <Modal title="Add exam" close={p.close}><FormInput label="Exam name" value={name} onChange={setName}/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Date" value={date} onChange={setDate} type="date"/><FormInput label="Portion" value={portion} onChange={setPortion} placeholder="Chapters / topics"/><ModalActions close={p.close} save={()=>p.add({id:Date.now(),name:name||"New exam",subject,date,portion:portion||"Portion not added yet",progress:0})}/></Modal>}
+function pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
