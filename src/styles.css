@@ -123,3 +123,13 @@
 .auth-switch{display:flex;justify-content:center;gap:6px;margin-top:17px;color:#aeb7c0;font-size:11px}
 .auth-switch button{border:0;background:none;color:#fff;font:inherit;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .auth-reference-modal .auth-note{display:block;color:#8e989f;font-size:9px;line-height:1.5;margin-top:18px}
+
+
+/* Study task controls */
+.task-row{gap:12px}
+.task-actions{display:flex;align-items:center;gap:5px;margin-left:2px;opacity:.72;transition:opacity .16s,transform .16s}
+.task-row:hover .task-actions,.task-row:focus-within .task-actions{opacity:1}
+.task-action{width:30px;height:30px;border:1px solid #2c3440;background:#141821;color:#8993a3;border-radius:8px;display:grid;place-items:center;cursor:pointer;transition:.16s}
+.task-action:hover{color:#f4f7fa;border-color:#586474;background:#1b222d;transform:translateY(-1px)}
+.task-action.danger:hover{color:#ff9a83;border-color:#704236;background:#2a1c1a}
+@media(max-width:600px){.task-actions{opacity:1}.task-action{width:28px;height:28px}.task-row{gap:8px}.task-row .minutes{margin-left:auto}.task-row .grow{min-width:0}.task-row .grow strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
