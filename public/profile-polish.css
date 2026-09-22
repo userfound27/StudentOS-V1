@@ -193,3 +193,119 @@
 .settings-panel .profile-image-button > span {
   z-index: 2;
 }
+
+
+/* Sidebar spacing + ChatGPT-style breathing room */
+.sidebar {
+  width: 270px;
+  padding: 16px 10px 14px;
+  overflow: hidden;
+  background: #10161e;
+}
+
+.sidebar .brand {
+  padding: 4px 10px 24px;
+  gap: 12px;
+}
+
+.sidebar .brand-mark {
+  flex: 0 0 36px;
+}
+
+.sidebar nav {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 2px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #2b3340 transparent;
+}
+
+.sidebar nav::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: #2b3340;
+  border-radius: 99px;
+}
+
+.sidebar .nav-item {
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  gap: 13px;
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+.sidebar .nav-item svg:first-child {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+}
+
+.sidebar .nav-item svg:last-child {
+  opacity: .72;
+}
+
+.sidebar .sidebar-bottom {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding: 12px 2px 0;
+  border-top: 1px solid #202631;
+}
+
+.sidebar .free-pill {
+  margin: 0 8px 8px;
+  min-height: 34px;
+  padding: 7px 9px;
+}
+
+.sidebar .sidebar-bottom .nav-item {
+  min-height: 42px;
+}
+
+.main {
+  margin-left: 270px;
+  width: calc(100% - 270px);
+}
+
+.sidebar.collapsed {
+  width: 78px;
+}
+
+.sidebar.collapsed + .main {
+  margin-left: 78px;
+  width: calc(100% - 78px);
+}
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .sidebar {
+    width: 245px;
+  }
+  .main {
+    margin-left: 245px;
+    width: calc(100% - 245px);
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    width: min(300px, 86vw);
+    padding: 16px 10px 14px;
+  }
+  .main {
+    margin-left: 0;
+    width: 100%;
+  }
+  .sidebar.collapsed {
+    width: 0;
+  }
+}
