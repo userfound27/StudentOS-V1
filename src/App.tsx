@@ -55,7 +55,7 @@ async function saveCloudData(userId:string,data:SavedData){
 }
 
 function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"account";onExit:()=>Promise<void>|void;onSignIn:()=>void;onDeleteAccount:()=>Promise<string>}){
- const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false),[selectedExamId,setSelectedExamId]=useState<number|null>(null),[updateAvailable,setUpdateAvailable]=useState(false);
+ const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false),[selectedExamId,setSelectedExamId]=useState<number|null>(null);
  const initial=window.__studentosData||blankData();
  const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
  const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[displayName,setDisplayName]=useState(initial.displayName||"Student"),[avatarUrl,setAvatarUrl]=useState(initial.avatarUrl||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
@@ -67,7 +67,7 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
   return()=>window.clearTimeout(timer);
  },[mode,tasks,exams,scores,journey,classLevel,displayName,avatarUrl]);
  useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
- useEffect(()=>{const handler=()=>setUpdateAvailable(true);window.addEventListener("studentos-update-available",handler);return()=>window.removeEventListener("studentos-update-available",handler)},[]);
+ useEffect(()=>{window.__studentosUpdate=async()=>{try{const registration=await navigator.serviceWorker?.getRegistration();await registration?.update();}finally{window.location.reload()}};return()=>{delete window.__studentosUpdate}},[]);
  const completed=tasks.filter(t=>t.done).length;
  const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{navigate("settings")};
@@ -98,7 +98,6 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
     {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} displayName={displayName} avatarUrl={avatarUrl} onProfileSave={saveProfile} onLogout={onExit} onDeleteAccount={onDeleteAccount} onSignIn={()=>{if(!supabase){setAccountError("Supabase is not connected yet. Sign up & sync will be available after the StudentOS Supabase environment is configured.");return;}setAccountError("");onSignIn()}} accountError={accountError}/>}
    </div>
   </main>
-  {updateAvailable&&<div className="update-banner"><div><strong>StudentOS has an update</strong><span>New features are ready. Refresh to use the latest version.</span></div><button className="primary-btn small" onClick={()=>window.__studentosUpdate?.()}>Update now</button><button className="icon-btn" aria-label="Dismiss update" onClick={()=>setUpdateAvailable(false)}><X size={16}/></button></div>}
   {showTask&&<TaskModal close={()=>{setShowTask(false);setEditingTask(null)}} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
   {editingTask&&<TaskModal task={editingTask} close={()=>setEditingTask(null)} save={updated=>{setTasks(all=>all.map(x=>x.id===updated.id?updated:x));setEditingTask(null)}}/>}
   {showScore&&<ScoreModal close={()=>setShowScore(false)} add={s=>{setScores(x=>[...x,s]);setShowScore(false)}}/>}
@@ -175,6 +174,7 @@ function SettingsPage(p:{journey:string;setJourney:(s:string)=>void;classLevel:s
   <SettingBlock title="Account & sync" text={p.mode==="account"?"Your account is connected. StudentOS saves your workspace to the cloud as you make changes.":"Create or sign in to an account to keep your StudentOS workspace synced across sessions."} right={p.mode==="account"?<button className="ghost-btn" onClick={()=>void p.onLogout()}><LogOut size={15}/> Log out</button>:<button className="primary-btn setting-signin" onClick={p.onSignIn}>Sign up & sync <ChevronRight size={15}/></button>}>
    {p.accountError&&<div className="auth-error settings-auth-error">{p.accountError}</div>}
   </SettingBlock>
+  <SettingBlock title="App updates" text="If you installed StudentOS to your phone or desktop, use this to fetch the latest deployed version after an update." right={<button className="ghost-btn" onClick={()=>window.__studentosUpdate?.()}>Check for updates</button>}/>
   {p.mode==="account"&&<SettingBlock title="Delete account" text="Permanently remove your account, synced workspace, and profile image. This cannot be undone." right={<button className="danger-btn" disabled={deleting} onClick={deleteAccount}>{deleting?"Deleting…":"Delete account"}</button>}/>}
   <SettingBlock title="Data" text={p.mode==="account"?"Your tasks, exams, scores, journey and profile preferences are stored in your account database.":"Anonymous data stays in memory and is not uploaded to a cloud account."} right={<span className="muted">{p.mode==="account"?"Cloud saved":"Local only"}</span>}/>
  </section></div>
