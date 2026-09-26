@@ -2168,3 +2168,16 @@ button,input,select,textarea{font-family:inherit}
 .setup-modal .reference-continue{
   background:#ff704a!important;color:#101214!important;border-color:#ff704a!important;
 }
+
+/* Keep the Notion mark readable — do not inherit the light text color from provider buttons. */
+.auth-reference-modal .notion-mark{
+  background:#f5f5f2!important;
+  color:#11151a!important;
+  border:1px solid #d7d8d4!important;
+  text-shadow:none!important;
+  opacity:1!important;
+}
+/* One palette across auth/setup: graphite + warm accent, no purple/blue provider surface. */
+.auth-reference-modal,.setup-modal{
+  background:linear-gradient(145deg,#12171c,#0d1115)!important;
+}
