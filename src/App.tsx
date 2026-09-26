@@ -211,18 +211,35 @@ function App(){
 
  const restorePersistentSession=async()=>{
   if(!supabase)return null;
-  const direct=await supabase.auth.getSession();
-  if(direct.data.session)return direct.data.session;
   try{
+   const direct=await supabase.auth.getSession();
+   if(direct.data.session){
+    const current=direct.data.session;
+    const refreshed=await supabase.auth.refreshSession();
+    const session=refreshed.data.session||current;
+    try{localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(session))}catch{}
+    return session;
+   }
    const raw=localStorage.getItem(AUTH_BACKUP_KEY);
    if(!raw)return null;
    const saved=JSON.parse(raw);
-   if(!saved?.access_token||!saved?.refresh_token)return null;
-   const restored=await supabase.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});
-   if(restored.error||!restored.data.session){localStorage.removeItem(AUTH_BACKUP_KEY);return null;}
-   localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(restored.data.session));
+   if(!saved?.refresh_token)return null;
+   const restored=await supabase.auth.setSession({access_token:String(saved.access_token||""),refresh_token:String(saved.refresh_token)});
+   if(restored.error||!restored.data.session){
+    const refreshed=await supabase.auth.refreshSession({refresh_token:String(saved.refresh_token)});
+    if(refreshed.error||!refreshed.data.session){
+     localStorage.removeItem(AUTH_BACKUP_KEY);
+     return null;
+    }
+    try{localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(refreshed.data.session))}catch{}
+    return refreshed.data.session;
+   }
+   try{localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(restored.data.session))}catch{}
    return restored.data.session;
-  }catch(error){console.error("StudentOS persistent session restore failed",error);return null;}
+  }catch(error){
+   console.error("StudentOS persistent session restore failed",error);
+   return null;
+  }
  };
 
  useEffect(()=>{
@@ -234,16 +251,23 @@ function App(){
     const session=await restorePersistentSession();
     if(session&&active){
      persistAuthBackup(session);
-     const user=session.user; const cloud=await loadCloudData(user.id);
-     window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
-     sessionStorage.removeItem("studentos_pending_signup"); setMode("account"); setScreen("app");
+     const user=session.user;
+     const cloud=await loadCloudData(user.id);
+     window.__studentosData=cloud;
+     window.__studentosEmail=user.email||"";
+     window.__studentosUserId=user.id;
+     sessionStorage.removeItem("studentos_pending_signup");
+     setMode("account");
+     setScreen("app");
     }
    }catch(error){console.error("StudentOS boot failed",error)}
    if(active)setLoading(false);
   };
+  if(!supabase){void boot();return;}
+  const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
+   persistAuthBackup(session);
+  });
   void boot();
-  if(!supabase)return;
-  const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>persistAuthBackup(session));
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
 
