@@ -2189,3 +2189,323 @@ button,input,select,textarea{font-family:inherit}
   .topbar{padding-left:104px!important;padding-right:82px!important}
   .sidebar:not(.collapsed)~.main .topbar{padding-left:104px!important}
 }
+
+
+/* =========================================================
+   STUDENTOS — MOBILE PWA REFINEMENT
+   The installed app should feel designed for a phone, not
+   like desktop UI compressed into a narrow viewport.
+   ========================================================= */
+@media (max-width: 600px){
+  /* Respect the standalone app's safe areas while keeping the
+     existing hamburger/header relationship intact. */
+  .app-shell{
+    min-height:100dvh;
+  }
+
+  .topbar{
+    min-height:78px !important;
+    height:78px !important;
+    padding:0 16px 0 88px !important;
+    padding-top:env(safe-area-inset-top) !important;
+    box-sizing:content-box;
+  }
+
+  .topbar .eyebrow{
+    font-size:8px !important;
+    letter-spacing:.18em !important;
+  }
+
+  .topbar h1{
+    margin-top:4px !important;
+    font-size:24px !important;
+    line-height:1 !important;
+    letter-spacing:-.045em !important;
+  }
+
+  .top-actions{
+    gap:8px !important;
+  }
+
+  .avatar{
+    width:38px !important;
+    height:38px !important;
+    flex-basis:38px !important;
+  }
+
+  /* Give the actual content a consistent phone gutter. */
+  .content{
+    width:calc(100% - 32px) !important;
+    max-width:none !important;
+    padding:22px 0 64px !important;
+  }
+
+  .stack{
+    gap:18px !important;
+  }
+
+  /* Hero: keep the strong type, remove the oversized desktop
+     canvas, and let the CTA sit naturally in the flow. */
+  .hero-card{
+    min-height:0 !important;
+    height:auto !important;
+    padding:30px 24px 28px !important;
+    border-radius:22px !important;
+    display:block !important;
+  }
+
+  .hero-card>div:first-child{
+    max-width:100% !important;
+  }
+
+  .hero-kicker{
+    font-size:8px !important;
+    letter-spacing:.13em !important;
+    line-height:1.45 !important;
+  }
+
+  .hero-card h2{
+    max-width:300px !important;
+    margin:16px 0 13px !important;
+    font-size:42px !important;
+    line-height:.99 !important;
+    letter-spacing:-.06em !important;
+  }
+
+  .hero-card p{
+    max-width:300px !important;
+    margin-bottom:22px !important;
+    font-size:13px !important;
+    line-height:1.55 !important;
+  }
+
+  .hero-card .primary-btn{
+    min-height:46px !important;
+    padding:0 15px !important;
+    border-radius:11px !important;
+  }
+
+  /* The orbit is decorative on mobile; removing it restores
+     hierarchy and prevents it competing with the headline. */
+  .hero-orbit{
+    display:none !important;
+  }
+
+  /* Today header becomes a clean action row. */
+  .section-heading{
+    align-items:center !important;
+    gap:12px !important;
+  }
+
+  .section-heading h3{
+    font-size:14px !important;
+  }
+
+  .section-heading p{
+    font-size:9px !important;
+    line-height:1.4 !important;
+  }
+
+  .ghost-btn{
+    min-height:40px !important;
+    padding:0 12px !important;
+    border-radius:11px !important;
+    flex:0 0 auto;
+  }
+
+  /* 2x2 metrics: four full-width cards were making the mobile
+     dashboard unnecessarily long. */
+  .stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:9px !important;
+  }
+
+  .stat-card,
+  .stat-card:nth-child(n){
+    min-height:96px !important;
+    padding:14px !important;
+    border-radius:16px !important;
+    transform:none !important;
+    border:1px solid #252f38 !important;
+  }
+
+  .stat-icon{
+    width:32px !important;
+    height:32px !important;
+    border-radius:9px !important;
+    flex:0 0 32px;
+  }
+
+  .stat-card span{
+    font-size:9px !important;
+    margin-bottom:3px !important;
+  }
+
+  .stat-card strong{
+    font-size:12px !important;
+    line-height:1.28 !important;
+    max-width:120px !important;
+  }
+
+  /* Stack the two larger dashboard panels, but make them feel
+     like sections rather than giant empty cards. */
+  .two-col{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  .panel{
+    padding:16px !important;
+    border-radius:18px !important;
+  }
+
+  .panel-head{
+    padding-bottom:14px !important;
+  }
+
+  .panel-head h3{
+    font-size:13px !important;
+  }
+
+  .panel-head p{
+    font-size:9px !important;
+    line-height:1.45 !important;
+  }
+
+  .text-btn{
+    font-size:10px !important;
+  }
+
+  .task-list{
+    margin-top:8px !important;
+  }
+
+  .task-row{
+    padding:11px 3px !important;
+  }
+
+  .task-row strong{
+    font-size:11px !important;
+  }
+
+  .task-row span{
+    font-size:9px !important;
+  }
+
+  /* Empty today's plan should read as an intentional empty state,
+     not as a giant dead rectangle. */
+  .task-list:empty::before{
+    content:"No sessions scheduled yet.";
+    display:block;
+    padding:8px 2px 3px;
+    color:#69737f;
+    font-size:10px;
+  }
+
+  /* Exam preview: prevent the name/subject line from becoming
+     visually jammed on narrow screens. */
+  .exam-mini{
+    gap:10px !important;
+    padding:10px 0 !important;
+  }
+
+  .date-box{
+    width:42px !important;
+    height:46px !important;
+    border-radius:12px !important;
+  }
+
+  .date-box strong{
+    font-size:16px !important;
+  }
+
+  .exam-mini .grow{
+    min-width:0;
+  }
+
+  .exam-mini strong,
+  .exam-mini span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .exam-mini strong{
+    display:block;
+    font-size:10px !important;
+  }
+
+  .exam-mini span{
+    display:block;
+    font-size:9px !important;
+    margin-top:3px;
+  }
+
+  .progress{
+    margin-top:7px !important;
+    height:4px !important;
+  }
+
+  .mission-strip{
+    padding:12px 13px !important;
+    border-radius:16px !important;
+    gap:10px !important;
+  }
+
+  .mission-icon{
+    width:35px !important;
+    height:35px !important;
+    flex:0 0 35px;
+  }
+
+  .mission-strip span{
+    font-size:8px !important;
+  }
+
+  .mission-strip strong{
+    font-size:11px !important;
+    line-height:1.25 !important;
+  }
+
+  .mission-strip button{
+    display:none !important;
+  }
+}
+
+/* Very narrow phones: keep the 2x2 metric system but protect
+   text and tap targets. */
+@media (max-width:360px){
+  .content{
+    width:calc(100% - 24px) !important;
+  }
+
+  .topbar{
+    padding-left:84px !important;
+    padding-right:12px !important;
+  }
+
+  .hero-card{
+    padding-left:20px !important;
+    padding-right:20px !important;
+  }
+
+  .hero-card h2{
+    font-size:38px !important;
+  }
+
+  .stat-card{
+    padding:12px !important;
+  }
+
+  .stat-card strong{
+    font-size:11px !important;
+  }
+}
+
+/* Standalone PWA: don't let the Android navigation area make the
+   final content feel abruptly cut off. */
+@media (display-mode: standalone){
+  .content{
+    padding-bottom:max(64px, env(safe-area-inset-bottom)) !important;
+  }
+}
