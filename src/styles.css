@@ -202,3 +202,13 @@
   .add-lesson{align-items:stretch}
   .add-lesson .primary-btn{padding-left:10px;padding-right:10px}
 }
+
+/* Desktop sidebar collapse */
+.sidebar.collapsed{width:72px;padding-left:10px;padding-right:10px}
+.sidebar.collapsed .brand{justify-content:center;padding-left:0;padding-right:0;gap:0}
+.sidebar.collapsed .brand>div:not(.brand-mark),
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .free-pill{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding-left:0;padding-right:0}
+.sidebar.collapsed~.main{margin-left:72px;width:calc(100% - 72px)}
+@media(max-width:760px){.sidebar.collapsed{width:250px}.sidebar.collapsed~.main{margin-left:0;width:100%}}
