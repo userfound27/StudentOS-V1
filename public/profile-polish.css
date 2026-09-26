@@ -533,3 +533,60 @@ select:focus {
     border-radius: 10px;
   }
 }
+
+/* Product-design pass: Apple/OpenAI-inspired principles without copying either interface. */
+:root{
+  --ui-bg:#080b10;
+  --ui-surface:#0d1219;
+  --ui-surface-2:#111720;
+  --ui-border:#202832;
+  --ui-text:#f5f7fb;
+  --ui-muted:#8b94a4;
+  --ui-accent:#ff6a2a;
+}
+body{background:var(--ui-bg)}
+.app-shell{background:var(--ui-bg)}
+.sidebar{background:rgba(10,14,20,.96);border-right:1px solid var(--ui-border)}
+.brand{padding-top:4px}
+.brand-mark{background:var(--ui-accent);box-shadow:0 8px 22px rgba(255,106,42,.18)}
+.topbar{background:rgba(8,11,16,.88);border-bottom:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px)}
+.topbar h1{font-size:23px;font-weight:650}
+.content{padding-top:38px}
+.hero-card{border:1px solid #27303a;background:#0d1219;border-radius:18px;box-shadow:none;min-height:290px}
+.hero-card h2{font-size:44px;line-height:1.03;letter-spacing:-2px}
+.hero-card h2 span{color:var(--ui-accent)}
+.hero-card p,.page-intro p{font-size:13px;color:#8e97a6}
+.primary-btn{background:var(--ui-accent);border-radius:10px;box-shadow:0 8px 24px rgba(255,106,42,.14)}
+.primary-btn:hover{background:#ff793d;transform:translateY(-1px)}
+.ghost-btn{background:#10161e;border-color:#29323d}
+.card,.panel,.stat-card,.journey-card,.focus-card{box-shadow:none}
+.panel{background:var(--ui-surface);border-color:var(--ui-border);border-radius:14px}
+.stat-card{background:var(--ui-surface);border-color:var(--ui-border);border-radius:12px}
+.stat-icon{background:#17130f;color:var(--ui-accent)}
+.task-row:hover{background:#121821;border-color:#27313d}
+.nav-item.active{background:#171d25;color:#fff;border-color:#27313d}
+.nav-item.active svg{color:var(--ui-accent)}
+.section-heading h3,.panel h3,.page-intro h2{font-weight:650}
+.page-intro h2{font-size:30px;letter-spacing:-1px}
+.exam-card-clickable{cursor:pointer;transition:border-color .16s ease,transform .16s ease}
+.exam-card-clickable:hover{border-color:#343e4a;transform:translateY(-1px)}
+.focus-card{background:#0d1219;border-color:#29313a;border-radius:20px}
+.focus-card h2{font-size:88px;letter-spacing:-5px}
+.focus-duration{border-top:1px solid #242c35;margin-top:32px;padding-top:26px}
+.duration-control{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.duration-control input{width:118px;text-align:center;font-size:24px;font-weight:700;padding:11px 8px;border-radius:12px}
+.duration-step{width:38px;height:38px;border:1px solid #2c3540;background:#11171f;color:#e8ebf2;border-radius:10px;font-size:21px;line-height:1;cursor:pointer}
+.duration-step:hover:not(:disabled){border-color:var(--ui-accent);color:#fff}
+.duration-step:disabled{opacity:.35;cursor:not-allowed}
+.duration-control>span{font-size:11px;color:#7e8796;margin-left:3px}
+.duration-presets{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.duration-preset{border:1px solid #27313b;background:transparent;color:#8992a1;border-radius:999px;padding:6px 9px;font-size:10px;cursor:pointer}
+.duration-preset:hover:not(:disabled),.duration-preset.active{border-color:#8a4329;background:#211610;color:#ffb08f}
+@media(max-width:760px){
+  .content{padding-top:24px}
+  .hero-card h2{font-size:34px}
+  .focus-card{padding:38px 18px}
+  .focus-card h2{font-size:62px;letter-spacing:-3px}
+  .duration-control input{width:104px}
+  .duration-step{width:42px;height:42px}
+}
