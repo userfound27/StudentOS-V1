@@ -312,7 +312,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
  const drift=(speed:number)=>({transform:`translate3d(0,${Math.min(120,scrollY*speed)}px,0)`});
  return <>
   {intro&&<div className="landing-intro-v2" aria-hidden="true"><div className="landing-intro-mark"><Command size={34}/></div><div className="landing-intro-word">STUDENTOS</div><div className="landing-intro-line"/></div>}
-  <main className="welcome-main-v2">
+  <main className="welcome-main-v2">\n  <div className="scroll-object-v2" style={{transform:`translate3d(0,${Math.min(180,scrollY*.22)}px,0) rotate(${Math.min(28,scrollY*.035)}deg)`}}><div className="scroll-object-core"><Command size={20}/></div></div>
   <section className="landing-hero-v2">
    <div className="landing-hero-copy">
     <div className="landing-eyebrow"><span/> STUDENTOS · YOUR SCHOOL OS</div>
