@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, Dispatch, SetStateAction } from "react";
 import { supabase } from "./lib/supabase";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Pencil, Plus, LogOut, Settings, Sparkles, Target, Trash2, Trophy, TrendingUp, Upload, UserRound, X, Zap } from "lucide-react";
+import { ArrowUpRight, BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Gauge, GraduationCap, LayoutDashboard, Menu, Pencil, Plus, LogOut, Settings, Sparkles, Target, Trash2, Trophy, TrendingUp, Upload, UserRound, X, Zap } from "lucide-react";
 
 type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
 type Task = { id:number; title:string; subject:string; date:string; done:boolean; minutes:number };
