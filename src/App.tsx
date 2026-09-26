@@ -301,35 +301,58 @@ function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void
 }
 
 function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;onSocial:(x:"google"|"notion")=>void;error:string}){
- return <main className="welcome-main">
-  <section className="welcome-hero interactive-hero">
-   <div className="hero-orb orb-one"/><div className="hero-orb orb-two"/>
-   <div className="welcome-copy reveal">
-    <div className="hero-kicker"><span className="welcome-dot"/> PERSONAL ACADEMIC COMMAND CENTER</div>
-    <h1>Make school feel <span>lighter.</span><br/>Make progress feel <span>visible.</span></h1>
-    <p>Plan your work, understand your progress, prepare for what is next, and keep your long-term direction in one beautiful student workspace.</p>
-    <div className="hero-cta-row"><button className="primary-btn welcome-primary" onClick={()=>p.openAuth("signup")}>Get started <ChevronRight size={18}/></button><button className="ghost-btn welcome-secondary" onClick={p.onAnonymous}>Try anonymously</button></div>
-    <div className="trust-row"><span>✓ No credit card</span><span>✓ Anonymous mode</span><span>✓ Cloud sync when signed in</span></div>
+ return <main className="welcome-main-v2">
+  <section className="landing-hero-v2">
+   <div className="landing-hero-copy">
+    <div className="landing-eyebrow"><span/> STUDENTOS · YOUR SCHOOL OS</div>
+    <h1>Know what matters.<br/><em>Do what matters.</em></h1>
+    <p>One calm workspace for your tasks, exams, scores, focus sessions and the journey you're building beyond school.</p>
+    <div className="landing-actions-v2">
+      <button className="landing-primary-v2" onClick={()=>p.openAuth("signup")}>Build my workspace <ChevronRight size={17}/></button>
+      <button className="landing-text-v2" onClick={p.onAnonymous}>Explore anonymously <ArrowUpRight size={16}/></button>
+    </div>
+    <div className="landing-proof-v2"><span>NO CARD REQUIRED</span><i/> <span>ANONYMOUS FIRST</span><i/> <span>SYNC WHEN YOU SIGN IN</span></div>
    </div>
-   <div className="hero-product reveal-delay">
-    <div className="float-chip chip-one"><TrendingUp size={15}/> Scores <strong>92%</strong></div>
-    <div className="float-chip chip-two"><Clock3 size={15}/> Focus <strong>24:18</strong></div>
-    <div className="product-window"><div className="window-top"><div className="window-dots"><i/><i/><i/></div><span>STUDENTOS / DASHBOARD</span><span className="window-status">LIVE</span></div><div className="window-main"><div className="window-title">Your next move</div><div className="window-mission">Finish what matters today.</div><div className="window-grid"><div><span>TODAY</span><strong>4 tasks</strong></div><div><span>EXAMS</span><strong>2 upcoming</strong></div><div><span>FOCUS</span><strong>01:25</strong></div></div><div className="window-progress"><span>Journey progress</span><i><b/></i></div></div></div>
+   <div className="landing-stage-v2">
+    <div className="stage-glow"/>
+    <div className="stage-label">LIVE WORKSPACE <span>●</span></div>
+    <div className="stage-window">
+      <div className="stage-top"><div className="stage-brand"><div className="stage-mark"><Command size={13}/></div> STUDENTOS</div><span>MONDAY · 08:42</span></div>
+      <div className="stage-body">
+       <span className="stage-kicker">YOUR NEXT MOVE</span>
+       <h2>Finish what<br/><b>matters today.</b></h2>
+       <div className="stage-focus"><div><span>FOCUS</span><strong>25:00</strong></div><div><span>TASKS</span><strong>4 open</strong></div><div><span>EXAMS</span><strong>2 next</strong></div></div>
+       <div className="stage-line"><span>JOURNEY</span><b>68%</b><i><em/></i></div>
+      </div>
+    </div>
+    <div className="stage-float stage-score"><TrendingUp size={14}/><span>Score average</span><b>92%</b></div>
+    <div className="stage-float stage-mission"><Target size={14}/><span>Today</span><b>Maths · 45 min</b></div>
    </div>
   </section>
-  <section className="ticker"><span>STUDY</span><i/> <span>EXAMS</span><i/> <span>SCORES</span><i/> <span>FOCUS</span><i/> <span>JOURNEY</span><i/> <span>YOUR NEXT MOVE</span></section>
-  <section className="how-section welcome-how reveal-section"><div className="how-heading"><div><div className="hero-kicker"><Sparkles size={15}/> BUILT FOR DIFFERENT STUDENTS</div><h3>One system. Your way.</h3><p>Your class, goals, subjects and pace are preferences—not assumptions. Change them whenever you want.</p></div><div className="how-badge"><Zap size={13}/> FLEXIBLE BY DESIGN</div></div><div className="how-grid">
-   <FeatureCard number="01" icon={<Target/>} title="Shape your workspace" text="Choose your class or grade, set a personal objective, and make the dashboard yours."/>
-   <FeatureCard number="02" icon={<BookOpen/>} title="Plan the next move" text="Break schoolwork into focused sessions instead of staring at a giant to-do list."/>
-   <FeatureCard number="03" icon={<CalendarDays/>} title="See what's coming" text="Keep exams, portions and preparation progress in one place."/>
-   <FeatureCard number="04" icon={<TrendingUp/>} title="Understand your scores" text="Record assessments and see your performance build over time."/>
-   <FeatureCard number="05" icon={<Clock3/>} title="Lock in focus" text="Use focused work blocks when it is time to actually get things done."/>
-   <FeatureCard number="06" icon={<Flame/>} title="Keep the bigger picture" text="Give your current journey a name and keep your long-term direction visible."/>
-  </div></section>
-  <section className="showcase-grid reveal-section"><div className="showcase-copy"><span className="hero-kicker">A DASHBOARD THAT MOVES WITH YOU</span><h2>Less clutter.<br/><span>More momentum.</span></h2><p>StudentOS is designed around the feeling of knowing what matters next. The interface surfaces the useful stuff without turning school into another spreadsheet.</p><div className="mini-points"><div><Sparkles size={16}/><span>Clear daily priorities</span></div><div><Zap size={16}/><span>Fast, lightweight tools</span></div><div><Target size={16}/><span>Personal goals & preferences</span></div></div></div><div className="stacked-cards"><div className="float-card card-a"><span>MONDAY</span><strong>Maths · 45 min</strong><small>Quadratics practice</small></div><div className="float-card card-b"><span>JOURNEY</span><strong>Finish what matters.</strong><small>Keep moving, one session at a time.</small></div><div className="float-card card-c"><span>FOCUS</span><strong>25:00</strong><small>One block. One objective.</small></div></div></section>
+
+  <section className="landing-manifesto-v2">
+   <div className="manifesto-index">01 / THE IDEA</div>
+   <div><h2>School is already complicated.<br/><em>Your tools shouldn't be.</em></h2><p>StudentOS turns the scattered pieces of school into one clear system. You decide the goal. StudentOS keeps the next move visible.</p></div>
+  </section>
+
+  <section className="landing-modules-v2">
+   <div className="module-heading"><span>02 / THE SYSTEM</span><h2>Everything you need.<br/><em>Nothing you don't.</em></h2></div>
+   <div className="module-grid-v2">
+    <article className="module-large"><div className="module-number">01</div><BookOpen/><h3>Study</h3><p>Turn a pile of schoolwork into a focused list of things you can actually finish.</p><div className="module-demo"><span>UP NEXT</span><b>Quadratics practice</b><small>45 min · Today</small></div></article>
+    <article className="module-dark"><div className="module-number">02</div><CalendarDays/><h3>Exams</h3><p>Know what is coming, what you've covered, and where your preparation stands.</p><div className="module-demo"><span>NEXT EXAM</span><b>Mathematics</b><small>12 days · 6 lessons</small></div></article>
+    <article className="module-dark"><div className="module-number">03</div><TrendingUp/><h3>Scores</h3><p>Keep assessments in one place and make progress visible over time.</p><div className="module-demo score-demo"><span>AVERAGE</span><b>92%</b><small>↑ 6% this term</small></div></article>
+    <article className="module-accent"><div className="module-number">04</div><Clock3/><h3>Focus</h3><p>When it's time to work, remove the noise and start the clock.</p><div className="module-demo timer-demo"><b>25:00</b><small>ONE SESSION · ONE OBJECTIVE</small></div></article>
+    <article className="module-wide"><div><div className="module-number">05</div><Target/><h3>Journey</h3><p>Name the thing you're working toward and keep it visible. College, a score, a skill — it's yours.</p></div><div className="journey-demo"><span>YOUR JOURNEY</span><b>90%+ MISSION</b><i><em/></i></div></article>
+   </div>
+  </section>
+
+  <section className="landing-close-v2">
+   <span>03 / START HERE</span>
+   <h2>Your next move<br/><em>starts here.</em></h2>
+   <div className="landing-close-actions"><button className="landing-primary-v2" onClick={()=>p.openAuth("signup")}>Get started <ChevronRight size={17}/></button><button className="landing-text-v2" onClick={p.onAnonymous}>Try anonymously <ArrowUpRight size={16}/></button></div>
+  </section>
  </main>
 }
-
 function pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
 
 export default App;
