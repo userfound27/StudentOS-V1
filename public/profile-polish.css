@@ -2142,3 +2142,29 @@ button,input,select,textarea{font-family:inherit}
 }
 
 /* Keep the no-JS fallback visually inside the same product language */
+
+/* Setup/auth must use the same StudentOS surface — no legacy blue */
+.auth-backdrop{background:rgba(5,7,9,.78)!important}
+.setup-modal{
+  background:linear-gradient(145deg,#12181e 0%,#0d1217 100%)!important;
+  border:1px solid #2a353e!important;
+  color:#f3f1eb!important;
+}
+.setup-modal .auth-icon{background:#ff704a!important;color:#101214!important}
+.setup-modal h1{color:#f3f1eb!important}
+.setup-modal>p{color:#909aa1!important}
+.setup-modal .field>span{color:#929ca4!important}
+.setup-modal input,.setup-modal select{
+  width:100%!important;box-sizing:border-box!important;
+  background:#090d11!important;color:#f1f2ee!important;
+  border:1px solid #2b353e!important;border-radius:13px!important;
+}
+.setup-modal input:focus,.setup-modal select:focus{
+  border-color:#ff704a!important;
+  box-shadow:0 0 0 3px rgba(255,112,74,.10)!important;
+}
+.setup-modal select{height:52px!important;padding:0 16px!important;appearance:auto!important;cursor:pointer}
+.setup-modal select option{background:#10151b;color:#f1f2ee}
+.setup-modal .reference-continue{
+  background:#ff704a!important;color:#101214!important;border-color:#ff704a!important;
+}
