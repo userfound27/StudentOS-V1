@@ -92,7 +92,7 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
   </aside>
   {!sidebarCollapsed&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={()=>setSidebarCollapsed(true)}/>}
   <main className="main">
-   <header className="topbar"><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{avatarUrl?<img src={avatarUrl} alt="Profile"/>:displayName.slice(0,1).toUpperCase()||"S"}</button></div></header>
+   <header className="topbar"><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div>{mode==="account"&&<button className="ghost-btn top-logout" onClick={()=>void onExit()} title="Log out"><LogOut size={15}/> Log out</button>}<button className="avatar" onClick={profileAction} title="Open profile settings">{avatarUrl?<img src={avatarUrl} alt="Profile"/>:displayName.slice(0,1).toUpperCase()||"S"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))}/>} 
     {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))} onFocus={task=>{setFocusTaskTitle(task.title);setFocusMinutes(task.minutes);setFocusSeconds(task.minutes*60);setFocusRunning(false);setPage("focus")}}/>}
@@ -209,37 +209,41 @@ function App(){
  const [accountSetupOpen,setAccountSetupOpen]=useState(false);
  const [authMode,setAuthMode]=useState<"signin"|"signup">("signin");
 
+ const restorePersistentSession=async()=>{
+  if(!supabase)return null;
+  const direct=await supabase.auth.getSession();
+  if(direct.data.session)return direct.data.session;
+  try{
+   const raw=localStorage.getItem(AUTH_BACKUP_KEY);
+   if(!raw)return null;
+   const saved=JSON.parse(raw);
+   if(!saved?.access_token||!saved?.refresh_token)return null;
+   const restored=await supabase.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});
+   if(restored.error||!restored.data.session){localStorage.removeItem(AUTH_BACKUP_KEY);return null;}
+   localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(restored.data.session));
+   return restored.data.session;
+  }catch(error){console.error("StudentOS persistent session restore failed",error);return null;}
+ };
+
  useEffect(()=>{
   let active=true;
-  const persistAuthBackup=(session:any)=>{
-   try{if(session)localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(session));else localStorage.removeItem(AUTH_BACKUP_KEY)}catch(error){console.error("StudentOS auth backup failed",error)}
-  };
+  const persistAuthBackup=(session:any)=>{try{if(session)localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(session));else localStorage.removeItem(AUTH_BACKUP_KEY)}catch(error){console.error("StudentOS auth persistence failed",error)}};
   const boot=async()=>{
-   if(!supabase){setLoading(false);return;}
-   let session=null;
-   const current=await supabase.auth.getSession();
-   session=current.data.session;
-   if(!session){
-    try{
-     const raw=localStorage.getItem(AUTH_BACKUP_KEY);
-     if(raw){const saved=JSON.parse(raw);if(saved?.access_token&&saved?.refresh_token){const restored=await supabase.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});session=restored.data.session||null;}}
-    }catch(error){console.error("StudentOS auth restore failed",error);try{localStorage.removeItem(AUTH_BACKUP_KEY)}catch{}}
-   }
-   if(session&&active){
-    persistAuthBackup(session);
-    const user=session.user; const cloud=await loadCloudData(user.id);
-    window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
-    sessionStorage.removeItem("studentos_pending_signup"); setMode("account");setScreen("app");
-   }
+   if(!supabase){if(active)setLoading(false);return;}
+   try{
+    const session=await restorePersistentSession();
+    if(session&&active){
+     persistAuthBackup(session);
+     const user=session.user; const cloud=await loadCloudData(user.id);
+     window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
+     sessionStorage.removeItem("studentos_pending_signup"); setMode("account"); setScreen("app");
+    }
+   }catch(error){console.error("StudentOS boot failed",error)}
    if(active)setLoading(false);
   };
   void boot();
   if(!supabase)return;
-  const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
-   // Keep a durable browser backup, but do not make Supabase database calls inside
-   // the auth callback. Supabase recommends keeping callbacks free of other auth/API work.
-   persistAuthBackup(session);
-  });
+  const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>persistAuthBackup(session));
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
 
