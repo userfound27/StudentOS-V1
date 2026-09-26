@@ -2181,3 +2181,11 @@ button,input,select,textarea{font-family:inherit}
 .auth-reference-modal,.setup-modal{
   background:linear-gradient(145deg,#12171c,#0d1115)!important;
 }
+
+/* PWA/mobile header clearance: reserve a full, deliberate lane for the menu control. */
+.topbar{padding-left:108px!important}
+.sidebar:not(.collapsed)~.main .topbar{padding-left:108px!important}
+@media(max-width:760px){
+  .topbar{padding-left:104px!important;padding-right:82px!important}
+  .sidebar:not(.collapsed)~.main .topbar{padding-left:104px!important}
+}
