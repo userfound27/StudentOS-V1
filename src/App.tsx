@@ -84,7 +84,7 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
     <NavItem icon={<Clock3 size={18}/>} label="Focus" active={page==="focus"} onClick={()=>navigate("focus")}/>
     <NavItem icon={<Target size={18}/>} label="Journey" active={page==="journey"} onClick={()=>navigate("journey")}/>
    </nav>
-   <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
+   <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Pricing</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
   {mobileNav&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={()=>setMobileNav(false)}/>}
   <main className="main">
