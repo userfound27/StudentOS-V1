@@ -5,7 +5,8 @@ import { BookOpen, CalendarDays, Check, ChevronRight, Clock3, Command, Flame, Ga
 
 type Page = "dashboard" | "study" | "exams" | "scores" | "focus" | "journey" | "settings";
 type Task = { id:number; title:string; subject:string; date:string; done:boolean; minutes:number };
-type Exam = { id:number; name:string; subject:string; date:string; portion:string; progress:number };
+type ExamLesson = { id:number; title:string; done:boolean };
+type Exam = { id:number; name:string; subject:string; date:string; portion:string; progress:number; lessons:ExamLesson[]; revisionRounds:number; practiceTests:number; confidence:number; weakAreas:string };
 type Score = { id:number; subject:string; test:string; obtained:number; max:number; date:string };
 const today = new Date().toISOString().slice(0,10);
 const seedTasks:Task[]=[
@@ -15,8 +16,8 @@ const seedTasks:Task[]=[
  {id:4,title:"SST map practice",subject:"SST",date:today,done:false,minutes:35}
 ];
 const seedExams:Exam[]=[
- {id:1,name:"Maths Unit Test",subject:"Maths",date:"2026-10-02",portion:"Quadratic Equations, Arithmetic Progressions",progress:62},
- {id:2,name:"Science Term Assessment",subject:"Science",date:"2026-10-09",portion:"Electricity, Magnetic Effects",progress:38}
+ {id:1,name:"Maths Unit Test",subject:"Maths",date:"2026-10-02",portion:"Quadratic Equations, Arithmetic Progressions",progress:0,lessons:[{id:101,title:"Quadratic Equations",done:false},{id:102,title:"Arithmetic Progressions",done:false}],revisionRounds:0,practiceTests:0,confidence:0,weakAreas:""},
+ {id:2,name:"Science Term Assessment",subject:"Science",date:"2026-10-09",portion:"Electricity, Magnetic Effects",progress:0,lessons:[{id:201,title:"Electricity",done:false},{id:202,title:"Magnetic Effects",done:false}],revisionRounds:0,practiceTests:0,confidence:0,weakAreas:""}
 ];
 const seedScores:Score[]=[
  {id:1,subject:"Science",test:"Periodic Test",obtained:34,max:40,date:"2026-09-10"},
@@ -25,23 +26,26 @@ const seedScores:Score[]=[
 ];
 
 type SavedData = { tasks:Task[]; exams:Exam[]; scores:Score[]; journey:string; classLevel:string; displayName:string; avatarUrl:string };
-declare global { interface Window { __studentosData?: SavedData; __studentosEmail?: string; __studentosUserId?: string } }
+declare global { interface Window { __studentosData?: SavedData; __studentosEmail?: string; __studentosUserId?: string; __studentosUpdate?:()=>void } }
 
 
+function normalizeExam(exam:Partial<Exam>):Exam{
+ const rawLessons=Array.isArray(exam.lessons)?exam.lessons:[];
+ const lessons=rawLessons.length?rawLessons.map((l,i)=>({id:Number(l.id)||Date.now()+i,title:String(l.title||"Untitled lesson"),done:Boolean(l.done)})):String(exam.portion||"").split(",").map((title,i)=>({id:Date.now()+i,title:title.trim(),done:false})).filter(l=>l.title);
+ const progress=lessons.length?Math.round(lessons.filter(l=>l.done).length/lessons.length*100):0;
+ return {id:Number(exam.id)||Date.now(),name:String(exam.name||"New exam"),subject:String(exam.subject||"Other"),date:String(exam.date||today),portion:String(exam.portion||lessons.map(l=>l.title).join(", ")),progress,lessons,revisionRounds:Math.max(0,Number(exam.revisionRounds)||0),practiceTests:Math.max(0,Number(exam.practiceTests)||0),confidence:Math.min(5,Math.max(0,Number(exam.confidence)||0)),weakAreas:String(exam.weakAreas||"")};
+}
 function blankData():SavedData{
- return {
-  tasks:seedTasks.map(x=>({...x})),
-  exams:seedExams.map(x=>({...x})),
-  scores:seedScores.map(x=>({...x})),
-  journey:"Make meaningful progress", classLevel:"", displayName:"Student", avatarUrl:""
- };
+ return {tasks:seedTasks.map(x=>({...x})),exams:seedExams.map(x=>normalizeExam(x)),scores:seedScores.map(x=>({...x})),journey:"Make meaningful progress",classLevel:"",displayName:"Student",avatarUrl:""};
 }
 
 async function loadCloudData(userId:string):Promise<SavedData>{
  if(!supabase) return blankData();
  const {data,error}=await supabase.from("studentos_profiles").select("data").eq("id",userId).maybeSingle();
  if(error){console.error(error);return blankData();}
- return data?.data ? {...blankData(), ...(data.data as Partial<SavedData>)} : blankData();
+ if(!data?.data)return blankData();
+ const merged={...blankData(),...(data.data as Partial<SavedData>)};
+ return {...merged,exams:(merged.exams||[]).map(e=>normalizeExam(e))};
 }
 
 async function saveCloudData(userId:string,data:SavedData){
@@ -51,7 +55,7 @@ async function saveCloudData(userId:string,data:SavedData){
 }
 
 function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"account";onExit:()=>Promise<void>|void;onSignIn:()=>void;onDeleteAccount:()=>Promise<string>}){
- const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+ const [page,setPage]=useState<Page>("dashboard"),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false),[selectedExamId,setSelectedExamId]=useState<number|null>(null),[updateAvailable,setUpdateAvailable]=useState(false);
  const initial=window.__studentosData||blankData();
  const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
  const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[displayName,setDisplayName]=useState(initial.displayName||"Student"),[avatarUrl,setAvatarUrl]=useState(initial.avatarUrl||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
@@ -63,13 +67,14 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
   return()=>window.clearTimeout(timer);
  },[mode,tasks,exams,scores,journey,classLevel,displayName,avatarUrl]);
  useEffect(()=>{if(!focusRunning)return;const timer=window.setInterval(()=>setFocusSeconds(s=>{if(s<=1){setFocusRunning(false);return 1500}return s-1}),1000);return()=>window.clearInterval(timer)},[focusRunning]);
+ useEffect(()=>{const handler=()=>setUpdateAvailable(true);window.addEventListener("studentos-update-available",handler);return()=>window.removeEventListener("studentos-update-available",handler)},[]);
  const completed=tasks.filter(t=>t.done).length;
  const scoreAverage=scores.length?Math.round(scores.reduce((a,s)=>a+s.obtained/s.max,0)/scores.length*100):0;
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{navigate("settings")};
  const saveProfile=async(name:string,file?:File)=>{if(mode!=="account"||!supabase||!window.__studentosUserId)return "Sign in to update your profile.";const nextName=name.trim().slice(0,60);if(!nextName)return "Enter a display name.";let nextAvatar=avatarUrl;if(file){const allowed=["image/jpeg","image/png","image/webp","image/gif"];if(!allowed.includes(file.type))return "Choose a JPG, PNG, WebP, or GIF image.";if(file.size>5*1024*1024)return "Choose an image smaller than 5 MB.";const path=window.__studentosUserId+"/avatar";const bucket=supabase.storage.from("studentos-avatars");const {error:uploadError}=await bucket.upload(path,file,{upsert:true,contentType:file.type,cacheControl:"3600"});if(uploadError)return "Image upload failed: "+uploadError.message;const {data:urlData}=bucket.getPublicUrl(path);nextAvatar=urlData.publicUrl+"?v="+Date.now();}const {error:authError}=await supabase.auth.updateUser({data:{display_name:nextName,avatar_url:nextAvatar}});if(authError)return "Profile save failed: "+authError.message;setDisplayName(nextName);setAvatarUrl(nextAvatar);return "";};
  return <div className="app-shell">
   <aside className={(mobileNav?"sidebar open ":"sidebar ")+(sidebarCollapsed?"collapsed":"")}>
-   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Collapse sidebar" onClick={()=>{setSidebarCollapsed(!sidebarCollapsed);setMobileNav(false)}}>{sidebarCollapsed?<ChevronRight size={18}/>:<X size={18}/>}</button></div>
+   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Collapse sidebar" onClick={()=>setMobileNav(false)}><X size={18}/></button></div>
    <nav>
     <NavItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={page==="dashboard"} onClick={()=>navigate("dashboard")}/>
     <NavItem icon={<BookOpen size={18}/>} label="Study" active={page==="study"} onClick={()=>navigate("study")}/>
@@ -80,18 +85,20 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
    </nav>
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Free mode</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
+  {mobileNav&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={()=>setMobileNav(false)}/>}
   <main className="main">
    <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{avatarUrl?<img src={avatarUrl} alt="Profile"/>:displayName.slice(0,1).toUpperCase()||"S"}</button></div></header>
    <div className="content">
     {page==="dashboard"&&<Dashboard journey={journey} classLevel={classLevel} completed={completed} tasks={tasks} exams={exams} scoreAverage={scoreAverage} navigate={navigate} setTasks={setTasks} onAddTask={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id))}/>} 
-    {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)}/>}
-    {page==="exams"&&<Exams exams={exams} setExams={setExams} onAdd={()=>setShowExam(true)}/>}
+    {page==="study"&&<Study tasks={tasks} setTasks={setTasks} onAdd={()=>setShowTask(true)} onEditTask={setEditingTask} onDeleteTask={id=>setTasks(all=>all.filter(x=>x.id!==id)}/>}
+    {page==="exams"&&<Exams exams={exams} setExams={setExams} onAdd={()=>setShowExam(true)} selectedExamId={selectedExamId} setSelectedExamId={setSelectedExamId}/>}
     {page==="scores"&&<Scores scores={scores} setScores={setScores} onAdd={()=>setShowScore(true)}/>}
     {page==="focus"&&<Focus seconds={focusSeconds} minutes={focusMinutes} setMinutes={setFocusMinutes} running={focusRunning} setRunning={setFocusRunning} reset={()=>{setFocusRunning(false);setFocusSeconds(focusMinutes*60)}}/>}
     {page==="journey"&&<Journey journey={journey} setJourney={setJourney} completed={completed} exams={exams} scoreAverage={scoreAverage}/>}
     {page==="settings"&&<SettingsPage journey={journey} setJourney={setJourney} classLevel={classLevel} setClassLevel={setClassLevel} mode={mode} displayName={displayName} avatarUrl={avatarUrl} onProfileSave={saveProfile} onLogout={onExit} onDeleteAccount={onDeleteAccount} onSignIn={()=>{if(!supabase){setAccountError("Supabase is not connected yet. Sign up & sync will be available after the StudentOS Supabase environment is configured.");return;}setAccountError("");onSignIn()}} accountError={accountError}/>}
    </div>
   </main>
+  {updateAvailable&&<div className="update-banner"><div><strong>StudentOS has an update</strong><span>New features are ready. Refresh to use the latest version.</span></div><button className="primary-btn small" onClick={()=>window.__studentosUpdate?.()}>Update now</button><button className="icon-btn" aria-label="Dismiss update" onClick={()=>setUpdateAvailable(false)}><X size={16}/></button></div>}
   {showTask&&<TaskModal close={()=>{setShowTask(false);setEditingTask(null)}} add={t=>{setTasks(x=>[...x,t]);setShowTask(false)}}/>}
   {editingTask&&<TaskModal task={editingTask} close={()=>setEditingTask(null)} save={updated=>{setTasks(all=>all.map(x=>x.id===updated.id?updated:x));setEditingTask(null)}}/>}
   {showScore&&<ScoreModal close={()=>setShowScore(false)} add={s=>{setScores(x=>[...x,s]);setShowScore(false)}}/>}
@@ -115,7 +122,35 @@ function Dashboard(p:{journey:string;classLevel:string;completed:number;tasks:Ta
  </div>
 }
 function Study(p:{tasks:Task[];setTasks:Dispatch<SetStateAction<Task[]>>;onAdd:()=>void;onEditTask:(task:Task)=>void;onDeleteTask:(id:number)=>void}){const [filter,setFilter]=useState("All");const subjects=["All",...Array.from(new Set(p.tasks.map(t=>t.subject)))];const shown=filter==="All"?p.tasks:p.tasks.filter(t=>t.subject===filter);return <div className="stack"><PageIntro title="Study command center" text="Turn your syllabus into small, finishable sessions." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add study session</button>}/><div className="filter-row">{subjects.map(s=><button key={s} className={filter===s?"filter active":"filter"} onClick={()=>setFilter(s)}>{s}</button>)}</div><section className="panel"><div className="panel-head"><div><h3>Study sessions</h3><p>Tap a session when it is done.</p></div><span className="count-pill">{shown.filter(t=>t.done).length+"/"+shown.length}</span></div><div className="task-list large">{shown.map(t=><TaskRow key={t.id} task={t} toggle={()=>p.setTasks(all=>all.map(x=>x.id===t.id?{...x,done:!x.done}:x))} onEdit={()=>p.onEditTask(t)} onDelete={()=>p.onDeleteTask(t.id)} detailed/>)}</div></section></div>}
-function Exams(p:{exams:Exam[];setExams:Dispatch<SetStateAction<Exam[]>>;onAdd:()=>void}){return <div className="stack"><PageIntro title="Exam control" text="Know what's coming and how ready you actually are." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add exam</button>}/><div className="exam-grid">{p.exams.map(e=><section className="panel exam-card" key={e.id}><div className="exam-card-top"><div className="date-box"><strong>{new Date(e.date+"T12:00:00").getDate()}</strong><span>{new Date(e.date+"T12:00:00").toLocaleString("en",{month:"short"})}</span></div><button className="icon-btn" onClick={()=>p.setExams(all=>all.filter(x=>x.id!==e.id))}><X size={16}/></button></div><span className="tag">{e.subject}</span><h3>{e.name}</h3><p>{e.portion}</p><div className="progress-label"><span>Preparation</span><strong>{e.progress+"%"}</strong></div><div className="progress"><i style={{width:e.progress+"%"}}/></div></section>)}</div></div>}
+function Exams(p:{exams:Exam[];setExams:Dispatch<SetStateAction<Exam[]>>;onAdd:()=>void;selectedExamId:number|null;setSelectedExamId:(id:number|null)=>void}){
+ return <div className="stack"><PageIntro title="Exam control" text="Know what's coming and how ready you actually are." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add exam</button>}/>
+  <div className="exam-grid">{p.exams.map(e=><section className="panel exam-card exam-card-clickable" key={e.id} onClick={()=>p.setSelectedExamId(e.id)}>
+   <div className="exam-card-top"><div className="date-box"><strong>{new Date(e.date+"T12:00:00").getDate()}</strong><span>{new Date(e.date+"T12:00:00").toLocaleString("en",{month:"short"})}</span></div><button className="icon-btn" aria-label={"Delete "+e.name} onClick={event=>{event.stopPropagation();p.setExams(all=>all.filter(x=>x.id!==e.id));if(p.selectedExamId===e.id)p.setSelectedExamId(null)}}><X size={16}/></button></div>
+   <span className="tag">{e.subject}</span><h3>{e.name}</h3><p>{e.portion||"No lessons added yet."}</p>
+   <div className="progress-label"><span>Preparation</span><strong>{e.progress+"%"}</strong></div><div className="progress"><i style={{width:e.progress+"%"}}/></div>
+   <div className="exam-meta"><span>{e.lessons.filter(l=>l.done).length}/{e.lessons.length} lessons studied</span><span>{e.revisionRounds} revisions · {e.practiceTests} practice tests</span></div>
+  </section>)}</div>
+  {p.selectedExamId!==null&&p.exams.some(e=>e.id===p.selectedExamId)&&<ExamDetail exam={p.exams.find(e=>e.id===p.selectedExamId)!} setExams={p.setExams} close={()=>p.setSelectedExamId(null)}/>}
+ </div>
+}
+function ExamDetail(p:{exam:Exam;setExams:Dispatch<SetStateAction<Exam[]>>;close:()=>void}){
+ const e=p.exam,studied=e.lessons.filter(l=>l.done).length,progress=e.lessons.length?Math.round(studied/e.lessons.length*100):0;
+ const [newLesson,setNewLesson]=useState(""),[weakAreas,setWeakAreas]=useState(e.weakAreas),[revision,setRevision]=useState(String(e.revisionRounds)),[practice,setPractice]=useState(String(e.practiceTests)),[confidence,setConfidence]=useState(String(e.confidence));
+ const update=(patch:Partial<Exam>)=>p.setExams(all=>all.map(x=>x.id===e.id?normalizeExam({...e,...patch}):x));
+ const toggleLesson=(id:number)=>{const lessons=e.lessons.map(l=>l.id===id?{...l,done:!l.done}:l);p.setExams(all=>all.map(x=>x.id===e.id?normalizeExam({...e,lessons}):x));};
+ const addLesson=()=>{const title=newLesson.trim();if(!title)return;const lessons=[...e.lessons,{id:Date.now(),title,done:false}];p.setExams(all=>all.map(x=>x.id===e.id?normalizeExam({...e,lessons,portion:lessons.map(l=>l.title).join(", ")}):x));setNewLesson("");};
+ const removeLesson=(id:number)=>{const lessons=e.lessons.filter(l=>l.id!==id);p.setExams(all=>all.map(x=>x.id===e.id?normalizeExam({...e,lessons,portion:lessons.map(l=>l.title).join(", ")}):x));};
+ return <div className="panel exam-detail"><div className="exam-detail-head"><div><span className="eyebrow">EXAM PROGRESS</span><h3>{e.name} · {e.subject}</h3><p>{e.date}</p></div><button className="icon-btn" onClick={p.close} aria-label="Close exam progress"><X size={17}/></button></div>
+  <div className="exam-progress-hero"><div><span>Progress</span><strong>{progress}%</strong></div><div className="progress"><i style={{width:progress+"%"}}/></div></div>
+  <div className="exam-kpis"><div><span>Lessons studied</span><strong>{studied}</strong><small>of {e.lessons.length}</small></div><div><span>Lessons left</span><strong>{Math.max(0,e.lessons.length-studied)}</strong><small>to complete</small></div><div><span>Revisions</span><strong>{e.revisionRounds}</strong><small>rounds</small></div><div><span>Practice tests</span><strong>{e.practiceTests}</strong><small>completed</small></div></div>
+  <div className="exam-detail-grid">
+   <section><div className="panel-head"><div><h4>Lessons</h4><p>Progress is calculated from completed lessons.</p></div></div><div className="lesson-list">{e.lessons.map(l=><div className={l.done?"lesson-row done":"lesson-row"} key={l.id}><button className="check-btn" onClick={()=>toggleLesson(l.id)} aria-label={l.done?"Mark lesson incomplete":"Mark lesson complete"}>{l.done?<Check size={14}/>:null}</button><span>{l.title}</span><button className="icon-btn" onClick={()=>removeLesson(l.id)} aria-label={"Remove "+l.title}><Trash2 size={14}/></button></div>)}</div>
+    <div className="add-lesson"><input value={newLesson} onChange={event=>setNewLesson(event.target.value)} placeholder="Add new lesson"/><button className="primary-btn small" onClick={addLesson}><Plus size={15}/> Add</button></div></section>
+   <section className="exam-side-controls"><label className="field"><span>Revision rounds</span><input type="number" min="0" value={revision} onChange={event=>{setRevision(event.target.value);update({revisionRounds:Math.max(0,Number(event.target.value)||0)})}}/></label><label className="field"><span>Practice tests completed</span><input type="number" min="0" value={practice} onChange={event=>{setPractice(event.target.value);update({practiceTests:Math.max(0,Number(event.target.value)||0)})}}/></label><label className="field"><span>Confidence (0–5)</span><input type="number" min="0" max="5" value={confidence} onChange={event=>{setConfidence(event.target.value);update({confidence:Math.min(5,Math.max(0,Number(event.target.value)||0))})}}/></label><label className="field"><span>Weak areas / notes</span><textarea value={weakAreas} onChange={event=>{setWeakAreas(event.target.value);update({weakAreas:event.target.value})}} placeholder="Topics to revisit..."/></label></section>
+  </div>
+ </div>
+}
+
 function Scores(p:{scores:Score[];setScores:Dispatch<SetStateAction<Score[]>>;onAdd:()=>void}){const total=p.scores.reduce((a,s)=>a+s.obtained,0),max=p.scores.reduce((a,s)=>a+s.max,0);return <div className="stack"><PageIntro title="Score tracker" text="Record marks and watch your progress build over time." action={<button className="primary-btn" onClick={p.onAdd}><Plus size={17}/> Add score</button>}/><div className="stats-grid"><Stat icon={<Gauge/>} label="Overall recorded" value={(max?Math.round(total/max*100):0)+"%"}/><Stat icon={<Trophy/>} label="Tests recorded" value={String(p.scores.length)}/></div><section className="panel"><div className="panel-head"><div><h3>Recent scores</h3><p>Your recorded assessments.</p></div></div><div className="score-table"><div className="score-row head"><span>Subject</span><span>Assessment</span><span>Marks</span><span>Percent</span><span/></div>{p.scores.map(s=><div className="score-row" key={s.id}><strong>{s.subject}</strong><span>{s.test}</span><span>{s.obtained+"/"+s.max}</span><strong>{Math.round(s.obtained/s.max*100)+"%"}</strong><button className="icon-btn" onClick={()=>p.setScores(all=>all.filter(x=>x.id!==s.id))}><X size={15}/></button></div>)}</div></section></div>}
 function Focus(p:{seconds:number;minutes:number;setMinutes:(x:number)=>void;running:boolean;setRunning:(x:boolean)=>void;reset:()=>void}){const m=Math.floor(p.seconds/60).toString().padStart(2,"0"),s=(p.seconds%60).toString().padStart(2,"0");const setDuration=(value:string)=>{const next=Math.min(180,Math.max(1,Number(value)||1));p.setMinutes(next);if(!p.running)p.reset()};return <div className="focus-page"><div className="focus-card"><div className="hero-kicker"><Clock3 size={15}/> FOCUS MODE</div><h2>{m+":"+s}</h2><p>One focused block. One clear objective.</p><div className="focus-actions"><button className="primary-btn" onClick={()=>p.setRunning(!p.running)}>{p.running?"Pause":"Start focus"}</button><button className="ghost-btn" onClick={p.reset}>Reset</button></div><div className="focus-duration"><label htmlFor="focus-minutes">Session length</label><div><input id="focus-minutes" type="number" min="1" max="180" value={p.minutes} disabled={p.running} onChange={e=>setDuration(e.target.value)} /><span>minutes</span></div></div><div className="focus-note"><Zap size={17}/> Choose any focus length from 1–180 minutes.</div></div></div>}
 function Journey(p:{journey:string;setJourney:(s:string)=>void;completed:number;exams:Exam[];scoreAverage:number}){const [editing,setEditing]=useState(false),[draft,setDraft]=useState(p.journey);return <div className="stack"><PageIntro title="Your journey" text="Give the next phase of school a name that means something to you."/><section className="journey-card"><div className="journey-badge"><Target size={27}/></div><div className="grow"><span className="eyebrow">CURRENT JOURNEY</span>{editing?<div className="inline-edit"><input value={draft} onChange={e=>setDraft(e.target.value)}/><button className="primary-btn small" onClick={()=>{p.setJourney(draft);setEditing(false)}}>Save</button></div>:<h2>{p.journey}</h2>}<p>Keep this objective visible when deciding what deserves your attention.</p></div>{!editing&&<button className="ghost-btn" onClick={()=>setEditing(true)}>Edit</button>}</section><div className="journey-grid"><Stat icon={<Check/>} label="Study sessions done" value={String(p.completed)}/><Stat icon={<TrendingUp/>} label="Recorded score level" value={p.scoreAverage+"%"}/><Stat icon={<CalendarDays/>} label="Exams on radar" value={String(p.exams.length)}/></div></div>}
@@ -153,7 +188,7 @@ function ModalActions(p:{close:()=>void;save:()=>void}){return <div className="m
 function FormInput(p:{label:string;value:string;onChange:(s:string)=>void;placeholder?:string;type?:string}){return <label className="field"><span>{p.label}</span><input type={p.type||"text"} value={p.value} onChange={e=>p.onChange(e.target.value)} placeholder={p.placeholder}/></label>}
 function TaskModal(p:{close:()=>void;add?:(t:Task)=>void;task?:Task;save?:(t:Task)=>void}){const editing=!!p.task;const [title,setTitle]=useState(p.task?.title||"");const [subject,setSubject]=useState(p.task?.subject||"Maths");const [minutes,setMinutes]=useState(String(p.task?.minutes||30));const [date,setDate]=useState(p.task?.date||today);const submit=()=>{const task:Task={id:p.task?.id||Date.now(),title:title.trim()||"Untitled study session",subject:subject.trim()||"Other",date,done:p.task?.done||false,minutes:Math.max(1,Number(minutes)||30)};if(editing)p.save?.(task);else p.add?.(task)};return <Modal title={editing?"Edit study session":"Add study session"} close={p.close}><FormInput label="Session" value={title} onChange={setTitle} placeholder="e.g. Trigonometry practice"/><FormInput label="Subject" value={subject} onChange={setSubject}/><div className="form-two"><FormInput label="Minutes" value={minutes} onChange={setMinutes} type="number"/><FormInput label="Date" value={date} onChange={setDate} type="date"/></div><ModalActions close={p.close} save={submit}/></Modal>}
 function ScoreModal(p:{close:()=>void;add:(s:Score)=>void}){const [subject,setSubject]=useState("Maths"),[test,setTest]=useState(""),[obtained,setObtained]=useState(""),[max,setMax]=useState("40");return <Modal title="Record a score" close={p.close}><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Assessment" value={test} onChange={setTest} placeholder="Unit test"/><div className="form-two"><FormInput label="Marks" value={obtained} onChange={setObtained} type="number"/><FormInput label="Out of" value={max} onChange={setMax} type="number"/></div><ModalActions close={p.close} save={()=>p.add({id:Date.now(),subject,test:test||"Assessment",obtained:Number(obtained)||0,max:Number(max)||40,date:today})}/></Modal>}
-function ExamModal(p:{close:()=>void;add:(e:Exam)=>void}){const [name,setName]=useState(""),[subject,setSubject]=useState("Maths"),[date,setDate]=useState("2026-10-15"),[portion,setPortion]=useState("");return <Modal title="Add exam" close={p.close}><FormInput label="Exam name" value={name} onChange={setName}/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Date" value={date} onChange={setDate} type="date"/><FormInput label="Portion" value={portion} onChange={setPortion} placeholder="Chapters / topics"/><ModalActions close={p.close} save={()=>p.add({id:Date.now(),name:name||"New exam",subject,date,portion:portion||"Portion not added yet",progress:0})}/></Modal>}
+function ExamModal(p:{close:()=>void;add:(e:Exam)=>void}){const [name,setName]=useState(""),[subject,setSubject]=useState("Maths"),[date,setDate]=useState("2026-10-15"),[portion,setPortion]=useState("");const submit=()=>{const lessons=portion.split(",").map(title=>title.trim()).filter(Boolean).map((title,i)=>({id:Date.now()+i,title,done:false}));p.add(normalizeExam({id:Date.now(),name:name||"New exam",subject,date,portion:portion.trim(),lessons,progress:0,revisionRounds:0,practiceTests:0,confidence:0,weakAreas:""}));};return <Modal title="Add exam" close={p.close}><FormInput label="Exam name" value={name} onChange={setName}/><FormInput label="Subject" value={subject} onChange={setSubject}/><FormInput label="Date" value={date} onChange={setDate} type="date"/><FormInput label="Lessons / chapters" value={portion} onChange={setPortion} placeholder="Separate lessons with commas"/><small className="form-help">StudentOS calculates progress from the lessons you add. You can add or remove lessons after creating the exam.</small><ModalActions close={p.close} save={submit}/></Modal>}
 function App(){
  const [screen,setScreen]=useState<"welcome"|"app">("welcome");
  const [mode,setMode]=useState<"anonymous"|"account">("anonymous");
