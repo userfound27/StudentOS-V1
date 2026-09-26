@@ -8,6 +8,7 @@ type Task = { id:number; title:string; subject:string; date:string; done:boolean
 type ExamLesson = { id:number; title:string; done:boolean };
 type Exam = { id:number; name:string; subject:string; date:string; portion:string; progress:number; lessons:ExamLesson[]; revisionRounds:number; practiceTests:number; confidence:number; weakAreas:string };
 type Score = { id:number; subject:string; test:string; obtained:number; max:number; date:string };
+const AUTH_BACKUP_KEY = "studentos-session-backup-v1";
 const today = (()=>{const d=new Date();const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);return local.toISOString().slice(0,10)})();
 const seedTasks:Task[]=[
  {id:1,title:"Quadratic equations practice",subject:"Maths",date:today,done:false,minutes:45},
@@ -210,21 +211,34 @@ function App(){
 
  useEffect(()=>{
   let active=true;
+  const persistAuthBackup=(session:any)=>{
+   try{if(session)localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(session));else localStorage.removeItem(AUTH_BACKUP_KEY)}catch(error){console.error("StudentOS auth backup failed",error)}
+  };
   const boot=async()=>{
    if(!supabase){setLoading(false);return;}
-   const {data}=await supabase.auth.getSession();
-   if(data.session&&active){
-    const user=data.session.user; const cloud=await loadCloudData(user.id);
+   let session=null;
+   const current=await supabase.auth.getSession();
+   session=current.data.session;
+   if(!session){
+    try{
+     const raw=localStorage.getItem(AUTH_BACKUP_KEY);
+     if(raw){const saved=JSON.parse(raw);if(saved?.access_token&&saved?.refresh_token){const restored=await supabase.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});session=restored.data.session||null;}}
+    }catch(error){console.error("StudentOS auth restore failed",error);try{localStorage.removeItem(AUTH_BACKUP_KEY)}catch{}}
+   }
+   if(session&&active){
+    persistAuthBackup(session);
+    const user=session.user; const cloud=await loadCloudData(user.id);
     window.__studentosData=cloud; window.__studentosEmail=user.email||""; window.__studentosUserId=user.id;
     sessionStorage.removeItem("studentos_pending_signup"); setMode("account");setScreen("app");
    }
-   setLoading(false);
+   if(active)setLoading(false);
   };
   void boot();
   if(!supabase)return;
   const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
-   if(!session)return;
-   void (async()=>{if(active){await finishCloudSession(session.user);setLoading(false);}})();
+   // Keep a durable browser backup, but do not make Supabase database calls inside
+   // the auth callback. Supabase recommends keeping callbacks free of other auth/API work.
+   persistAuthBackup(session);
   });
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
@@ -232,10 +246,10 @@ function App(){
  const enterAnonymous=()=>{setAnonymousSetupOpen(true)};
  const finishAccountSetup=async(displayName:string,journey:string,classLevel:string)=>{const data={...(window.__studentosData||blankData()),displayName:displayName.trim()||"Student",journey:journey.trim()||"Make meaningful progress",classLevel:classLevel.trim()};window.__studentosData=data;setAccountSetupOpen(false);if(window.__studentosUserId)await saveCloudData(window.__studentosUserId,data)};
  const finishAnonymousSetup=(displayName:string,journey:string,classLevel:string)=>{const data=blankData();data.displayName=displayName.trim()||"Student";data.journey=journey.trim()||"Make meaningful progress";data.classLevel=classLevel.trim();window.__studentosData=data;window.__studentosEmail="";window.__studentosUserId="";setAnonymousSetupOpen(false);setMode("anonymous");setScreen("app")};
- const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
+ const exit=async()=>{if(supabase&&mode==="account")await supabase.auth.signOut();try{localStorage.removeItem(AUTH_BACKUP_KEY)}catch{}window.__studentosData=undefined;window.__studentosEmail="";window.__studentosUserId="";setMode("anonymous");setScreen("welcome")};
  const deleteAccount=async()=>{if(!supabase)return "Supabase is not connected.";const {error:deleteError}=await supabase.functions.invoke("delete-studentos-account",{method:"POST"});if(deleteError)return deleteError.message||"Account deletion failed.";await exit();return "";};
 
- const finishCloudSession=async(user:{id:string;email?:string|null})=>{const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;const needsSetup=sessionStorage.getItem("studentos_pending_signup")==="1";sessionStorage.removeItem("studentos_pending_signup");setMode("account");setScreen("app");setAuthOpen(false);if(needsSetup)setAccountSetupOpen(true)};
+ const finishCloudSession=async(user:{id:string;email?:string|null})=>{try{const session=(await supabase?.auth.getSession())?.data.session;if(session)localStorage.setItem(AUTH_BACKUP_KEY,JSON.stringify(session))}catch{}const anonymousSnapshot=mode==="anonymous"?window.__studentosData:undefined;const cloud=anonymousSnapshot?anonymousSnapshot:await loadCloudData(user.id);if(anonymousSnapshot)await saveCloudData(user.id,cloud);window.__studentosData=cloud;window.__studentosEmail=user.email||"";window.__studentosUserId=user.id;const needsSetup=sessionStorage.getItem("studentos_pending_signup")==="1";sessionStorage.removeItem("studentos_pending_signup");setMode("account");setScreen("app");setAuthOpen(false);if(needsSetup)setAccountSetupOpen(true)};
 
  const social=async(provider:"google"|"notion")=>{
   setError("");
