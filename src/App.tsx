@@ -264,11 +264,19 @@ function App(){
    if(active)setLoading(false);
   };
   if(!supabase){void boot();return;}
-  const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
-   persistAuthBackup(session);
+  // Register the auth listener only after boot restoration. Supabase can emit
+  // INITIAL_SESSION with a null session while its storage is still being read;
+  // treating that event as a logout can erase our durable backup and break the
+  // exact close-tab -> reopen flow. Only an explicit SIGNED_OUT event clears it.
+  let listener:{subscription:{unsubscribe:()=>void}}|null=null;
+  void boot().finally(()=>{
+   if(!active||!supabase)return;
+   listener=supabase.auth.onAuthStateChange((event,session)=>{
+    if(session)persistAuthBackup(session);
+    else if(event==="SIGNED_OUT")persistAuthBackup(null);
+   }).data;
   });
-  void boot();
-  return()=>{active=false;listener.subscription.unsubscribe()};
+  return()=>{active=false;listener?.subscription.unsubscribe()};
  },[]);
 
  const enterAnonymous=()=>{setAnonymousSetupOpen(true)};
