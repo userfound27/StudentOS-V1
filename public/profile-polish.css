@@ -1458,3 +1458,24 @@ body{
 @media(prefers-reduced-motion:reduce){
   .sidebar,.sidebar-toggle,.sidebar-toggle .toggle-icon,.main{transition:none!important}
 }
+
+
+/* Final navigation polish: the control itself stays neutral — no orange underline. */
+.sidebar-toggle::after{display:none}
+
+/* When the drawer opens, the page header travels with the main content.
+   This keeps the StudentOS heading clear of the X instead of sitting behind it. */
+.main{
+  transition:margin-left .38s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1);
+}
+.topbar{
+  transition:padding-left .38s cubic-bezier(.16,1,.3,1);
+}
+.sidebar:not(.collapsed)~.main .topbar{
+  padding-left:82px;
+}
+@media(max-width:760px){
+  .sidebar:not(.collapsed)~.main .topbar{
+    padding-left:70px;
+  }
+}
