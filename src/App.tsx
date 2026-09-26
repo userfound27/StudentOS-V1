@@ -301,7 +301,18 @@ function AuthModal(p:{mode:"signin"|"signup";setMode:(m:"signin"|"signup")=>void
 }
 
 function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;onSocial:(x:"google"|"notion")=>void;error:string}){
- return <main className="welcome-main-v2">
+ const [intro,setIntro]=useState(true);
+ const [scrollY,setScrollY]=useState(0);
+ useEffect(()=>{
+   const onScroll=()=>setScrollY(window.scrollY);
+   window.addEventListener("scroll",onScroll,{passive:true});
+   const t=window.setTimeout(()=>setIntro(false),1450);
+   return()=>{window.removeEventListener("scroll",onScroll);window.clearTimeout(t)};
+ },[]);
+ const drift=(speed:number)=>({transform:`translate3d(0,${Math.min(120,scrollY*speed)}px,0)`});
+ return <>
+  {intro&&<div className="landing-intro-v2" aria-hidden="true"><div className="landing-intro-mark"><Command size={34}/></div><div className="landing-intro-word">STUDENTOS</div><div className="landing-intro-line"/></div>}
+  <main className="welcome-main-v2">
   <section className="landing-hero-v2">
    <div className="landing-hero-copy">
     <div className="landing-eyebrow"><span/> STUDENTOS · YOUR SCHOOL OS</div>
@@ -313,7 +324,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
     </div>
     <div className="landing-proof-v2"><span>NO CARD REQUIRED</span><i/> <span>ANONYMOUS FIRST</span><i/> <span>SYNC WHEN YOU SIGN IN</span></div>
    </div>
-   <div className="landing-stage-v2">
+   <div className="landing-stage-v2">\n    <div className="stage-orbit stage-orbit-a" style={drift(-.08)}/><div className="stage-orbit stage-orbit-b" style={drift(.12)}/>
     <div className="stage-glow"/>
     <div className="stage-label">LIVE WORKSPACE <span>●</span></div>
     <div className="stage-window">
@@ -325,8 +336,8 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
        <div className="stage-line"><span>JOURNEY</span><b>68%</b><i><em/></i></div>
       </div>
     </div>
-    <div className="stage-float stage-score"><TrendingUp size={14}/><span>Score average</span><b>92%</b></div>
-    <div className="stage-float stage-mission"><Target size={14}/><span>Today</span><b>Maths · 45 min</b></div>
+    <div className="stage-float stage-score" style={drift(.16)}><TrendingUp size={14}/><span>Score average</span><b>92%</b></div>
+    <div className="stage-float stage-mission" style={drift(-.12)}><Target size={14}/><span>Today</span><b>Maths · 45 min</b></div>
    </div>
   </section>
 
