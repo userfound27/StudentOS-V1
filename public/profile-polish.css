@@ -396,3 +396,140 @@
     min-width: 28px;
   }
 }
+
+/* Refined product UI: professional first, student-friendly second */
+:root {
+  --student-accent: #ff704c;
+  --student-accent-soft: rgba(255,112,76,.12);
+  --surface-0: #090d13;
+  --surface-1: #0e141c;
+  --surface-2: #121923;
+  --line: #232b36;
+  --line-soft: #1b232d;
+}
+
+/* Keep everyday avatars clean. The orange ring is reserved for the editable profile control. */
+.avatar {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: #151b24;
+}
+.avatar img {
+  border: 0 !important;
+}
+
+/* Editing state only: clear orange focus ring and a restrained edit affordance. */
+.profile-image-button {
+  border: 2px solid var(--student-accent) !important;
+  box-shadow: 0 0 0 3px var(--student-accent-soft) !important;
+}
+.profile-image-button:hover,
+.profile-image-button:focus-visible {
+  border-color: #ff8061 !important;
+  box-shadow: 0 0 0 4px rgba(255,112,76,.14) !important;
+}
+
+/* Reduce the "AI-generated dashboard" feel: fewer floating effects, stronger hierarchy, quieter surfaces. */
+.card,
+.panel,
+.stat-card,
+.section-card,
+.dashboard-card {
+  box-shadow: none;
+}
+
+button,
+input,
+textarea,
+select {
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.primary-btn {
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.ghost-btn,
+.icon-btn {
+  box-shadow: none;
+}
+
+.sidebar {
+  background: #0d131b;
+  border-right-color: #202833;
+}
+
+.sidebar .brand {
+  padding-bottom: 20px;
+}
+
+.sidebar .nav-item {
+  border: 1px solid transparent;
+  font-weight: 500;
+  letter-spacing: .005em;
+}
+
+.sidebar .nav-item:hover {
+  background: #141b24;
+  border-color: #1f2833;
+}
+
+.sidebar .nav-item.active {
+  background: #171f29;
+  border-color: #29333f;
+  color: #f1f3f6;
+}
+
+.main {
+  background: var(--surface-0);
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -.015em;
+}
+
+.dashboard-grid,
+.content-grid {
+  gap: 16px;
+}
+
+.card,
+.panel {
+  border-color: var(--line);
+  background: var(--surface-1);
+  border-radius: 12px;
+}
+
+.card:hover,
+.panel:hover {
+  transform: none;
+}
+
+input,
+textarea,
+select {
+  border-color: #29323d;
+  background: #0c1118;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(255,112,76,.65);
+  box-shadow: 0 0 0 3px rgba(255,112,76,.08);
+  outline: none;
+}
+
+.badge,
+.pill,
+.status-pill {
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .card,
+  .panel {
+    border-radius: 10px;
+  }
+}
