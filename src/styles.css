@@ -234,3 +234,34 @@
 .landing-close-v2{min-height:620px;border-top:1px solid rgba(255,255,255,.075);display:flex;flex-direction:column;justify-content:center;align-items:flex-start}.landing-close-v2 h2{font-size:clamp(62px,7vw,100px);line-height:.9;letter-spacing:-.075em;margin:22px 0 30px}.landing-close-actions{display:flex;gap:22px;align-items:center}
 @media(max-width:950px){.landing-hero-v2{grid-template-columns:1fr;padding:55px 0 70px}.landing-stage-v2{min-height:540px}.landing-manifesto-v2{grid-template-columns:1fr;gap:30px;padding:80px 0}.module-heading{display:block}}
 @media(max-width:650px){.welcome-nav{height:70px;padding:0 18px}.welcome-nav-actions{gap:10px}.nav-auth-link{display:none}.welcome-main-v2{padding:0 18px}.landing-hero-v2{min-height:auto;gap:20px}.landing-hero-copy{padding:70px 0 20px}.landing-hero-copy h1{font-size:52px}.landing-hero-copy p{font-size:14px}.landing-actions-v2{align-items:flex-start;flex-direction:column;gap:9px}.landing-primary-v2{width:100%;justify-content:center}.landing-proof-v2{line-height:1.5;flex-wrap:wrap}.landing-stage-v2{min-height:430px}.stage-window{transform:none}.stage-body{padding:25px}.stage-body h2{font-size:30px}.stage-score{left:-4px;top:30px}.stage-mission{right:-4px;bottom:55px}.stage-focus{gap:5px}.stage-focus>div{padding:12px 9px}.module-grid-v2{grid-template-columns:1fr}.module-grid-v2 article{min-height:360px}.module-wide{grid-column:auto;display:block!important;min-height:390px!important}.journey-demo{margin-top:35px}.landing-close-v2{min-height:500px}.landing-close-v2 h2{font-size:60px}.landing-close-actions{flex-direction:column;align-items:flex-start;gap:10px}}
+
+/* Cinematic entry + scroll-reactive landing layer */
+.landing-intro-v2{
+ position:fixed;inset:0;z-index:9999;background:#080a0d;color:#f4f4f1;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ animation:landingIntroOut .75s cubic-bezier(.76,0,.24,1) 1.05s forwards;
+ pointer-events:none;
+}
+.landing-intro-mark{
+ width:82px;height:82px;border-radius:24px;background:#ff704a;color:#101216;
+ display:grid;place-items:center;box-shadow:0 24px 70px rgba(255,112,74,.22);
+ animation:landingMarkIn .8s cubic-bezier(.16,1,.3,1) both;
+}
+.landing-intro-word{margin-top:18px;font-size:12px;font-weight:800;letter-spacing:.24em;animation:landingWordIn .7s ease .18s both}
+.landing-intro-line{width:0;height:1px;background:#ff704a;margin-top:22px;animation:landingLineIn .65s ease .35s forwards}
+@keyframes landingIntroOut{to{opacity:0;visibility:hidden;transform:scale(1.015)}}
+@keyframes landingMarkIn{from{opacity:0;transform:scale(.7) rotate(-7deg)}to{opacity:1;transform:none}}
+@keyframes landingWordIn{from{opacity:0;transform:translateY(12px);letter-spacing:.4em}to{opacity:1;transform:none;letter-spacing:.24em}}
+@keyframes landingLineIn{to{width:86px}}
+.stage-orbit{position:absolute;border:1px solid rgba(255,112,74,.18);border-radius:50%;pointer-events:none;will-change:transform}
+.stage-orbit-a{width:260px;height:260px;top:17%;left:12%}
+.stage-orbit-b{width:420px;height:420px;right:-4%;bottom:3%;border-color:rgba(132,116,255,.12)}
+.stage-float{will-change:transform;transition:transform .08s linear}
+.landing-hero-v2,.landing-manifesto-v2,.landing-modules-v2,.landing-close-v2{contain:paint}
+@media(max-width:760px){
+ .welcome-nav{padding-left:18px;padding-right:18px}
+ .landing-hero-v2{overflow:hidden}
+ .landing-stage-v2{overflow:hidden}
+ .stage-orbit-a{width:190px;height:190px;left:0}
+ .stage-orbit-b{width:280px;height:280px;right:-20%}
+}
