@@ -1154,3 +1154,307 @@ body{
     backdrop-filter:blur(4px);
   }
 }
+
+
+/* =========================================================
+   STUDENTOS — VISUAL REWORK V2
+   Premium, expressive, student-first. No copied layouts.
+   ========================================================= */
+
+/* The menu control belongs to the navigation, not the logo. */
+.sidebar-toggle{
+  left:16px;
+  top:16px;
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  background:rgba(14,18,24,.92);
+  border:1px solid #29313b;
+  box-shadow:0 12px 34px rgba(0,0,0,.28);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.sidebar-toggle.is-open{
+  left:270px;
+  background:#11161d;
+}
+.sidebar-toggle.is-open:hover{
+  background:#181e26;
+}
+.sidebar-toggle.is-closed:hover{
+  background:#181e26;
+}
+.sidebar-toggle .toggle-menu,
+.sidebar-toggle .toggle-close{
+  transition:opacity .2s ease,transform .38s cubic-bezier(.16,1,.3,1);
+}
+.sidebar-toggle.is-closed .toggle-menu{transform:rotate(0) scale(1)}
+.sidebar-toggle.is-closed .toggle-close{transform:rotate(-90deg) scale(.72)}
+.sidebar-toggle.is-open .toggle-menu{transform:rotate(90deg) scale(.72)}
+.sidebar-toggle.is-open .toggle-close{transform:rotate(0) scale(1)}
+.sidebar-toggle::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  border-bottom:2px solid rgba(255,106,42,.9);
+  pointer-events:none;
+  opacity:.9;
+}
+
+/* Open drawer: the actual StudentOS symbol gets its own space. */
+.sidebar:not(.collapsed) .brand{
+  padding-left:10px;
+  padding-right:8px;
+}
+.sidebar:not(.collapsed) .brand-mark{
+  opacity:1;
+  transform:scale(1);
+  transition:opacity .25s ease .12s,transform .38s cubic-bezier(.16,1,.3,1) .08s;
+}
+.sidebar.collapsed .brand-mark{
+  opacity:0;
+  transform:scale(.7);
+}
+
+/* Give the entire application a richer canvas without turning it into a gradient poster. */
+.app-shell{
+  background:
+    radial-gradient(900px 520px at 76% -12%,rgba(92,67,185,.12),transparent 68%),
+    radial-gradient(760px 500px at 8% 78%,rgba(255,106,42,.045),transparent 70%),
+    #07090c;
+}
+.main{
+  background:transparent;
+}
+.topbar{
+  min-height:82px;
+  background:rgba(7,9,12,.72);
+  border-bottom:1px solid rgba(255,255,255,.075);
+  box-shadow:0 1px 0 rgba(255,255,255,.015);
+}
+
+/* Premium sidebar */
+.sidebar{
+  background:
+    linear-gradient(180deg,rgba(17,23,31,.98),rgba(9,12,17,.99));
+  border-right:1px solid #252d36;
+  box-shadow:22px 0 60px rgba(0,0,0,.25);
+}
+.sidebar .brand{
+  min-height:72px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+}
+.sidebar .brand-mark{
+  background:linear-gradient(145deg,#ff7540,#ff5419);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 8px 28px rgba(255,91,35,.22);
+}
+.sidebar .brand strong{
+  font-size:16px;
+  letter-spacing:-.035em;
+}
+.sidebar .brand span{
+  color:#77818d;
+}
+.sidebar nav{
+  padding-top:12px;
+  gap:5px;
+}
+.sidebar .nav-item{
+  min-height:50px;
+  border:1px solid transparent;
+  color:#8f99a6;
+}
+.sidebar .nav-item:hover{
+  background:rgba(255,255,255,.045);
+  border-color:rgba(255,255,255,.045);
+  color:#f1f4f7;
+}
+.sidebar .nav-item.active{
+  background:linear-gradient(90deg,rgba(255,106,42,.13),rgba(255,106,42,.035));
+  border-color:rgba(255,106,42,.12);
+  color:#fff;
+  box-shadow:inset 0 0 24px rgba(255,106,42,.025);
+}
+.sidebar .nav-item.active::before{
+  left:0;
+  width:3px;
+  top:9px;
+  bottom:9px;
+  box-shadow:0 0 14px rgba(255,106,42,.45);
+}
+.sidebar .sidebar-bottom{
+  border-top:1px solid rgba(255,255,255,.065);
+}
+.sidebar .free-pill{
+  color:#8d97a3;
+  background:rgba(255,255,255,.025);
+  border-color:rgba(255,255,255,.065);
+}
+
+/* Main content becomes a visual composition rather than a grid of boxes. */
+.content{
+  width:min(1240px,calc(100% - 80px));
+  padding:46px 0 90px;
+}
+.hero-card{
+  min-height:392px;
+  padding:62px 58px;
+  border-radius:28px;
+  border:1px solid rgba(154,119,255,.25);
+  background:
+    radial-gradient(520px 330px at 82% 44%,rgba(109,76,213,.27),transparent 67%),
+    radial-gradient(340px 240px at 67% 90%,rgba(255,106,42,.08),transparent 70%),
+    linear-gradient(135deg,#141326 0%,#10111d 48%,#11101c 100%);
+  box-shadow:
+    0 28px 80px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.055);
+}
+.hero-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(115deg,transparent 0 58%,rgba(255,255,255,.028) 59%,transparent 60%),
+    radial-gradient(circle at 79% 47%,transparent 0 88px,rgba(169,140,255,.14) 89px 90px,transparent 91px);
+  pointer-events:none;
+}
+.hero-card::after{
+  right:3%;
+  bottom:-48%;
+  width:540px;
+  height:540px;
+  border-color:rgba(163,137,255,.09);
+}
+.hero-kicker{
+  color:#ff9b79;
+  font-size:10px;
+  letter-spacing:.16em;
+}
+.hero-card h2{
+  font-size:clamp(44px,5vw,72px);
+  letter-spacing:-.062em;
+  line-height:.96;
+}
+.hero-card h2 span{
+  background:linear-gradient(90deg,#ff7545,#ff9a73);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.hero-card p{
+  color:#929bad;
+  font-size:15px;
+}
+.hero-card .primary-btn{
+  min-height:48px;
+  padding:0 20px;
+  border-radius:13px;
+  box-shadow:0 12px 30px rgba(255,92,35,.19);
+}
+.hero-card .primary-btn:hover{
+  box-shadow:0 15px 38px rgba(255,92,35,.26);
+}
+
+/* Today's area: less generic, more editorial. */
+.section-heading h3{
+  font-size:17px;
+  letter-spacing:-.03em;
+}
+.stats-grid{
+  gap:14px;
+}
+.stat-card{
+  min-height:132px;
+  padding:21px;
+  border-radius:18px;
+  background:
+    linear-gradient(145deg,rgba(20,25,32,.96),rgba(13,17,22,.96));
+  border-color:#242c35;
+  box-shadow:0 12px 35px rgba(0,0,0,.11),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.stat-card:hover{
+  border-color:#343e49;
+  transform:translateY(-2px);
+}
+.stat-card .stat-icon{
+  width:36px;
+  height:36px;
+  border-radius:11px;
+  background:rgba(255,106,42,.09);
+  border:1px solid rgba(255,106,42,.11);
+}
+
+/* Panels have depth, but no excessive glassmorphism. */
+.panel,.card,.journey-card,.focus-card{
+  border-radius:20px;
+  background:linear-gradient(145deg,#11161c,#0d1116);
+  border-color:#242c35;
+  box-shadow:0 18px 50px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.panel:hover{
+  border-color:#303944;
+}
+
+/* Stronger hierarchy for every page heading. */
+.page-intro h2{
+  font-size:42px;
+  letter-spacing:-.055em;
+}
+.page-intro p{
+  font-size:14px;
+  color:#7f8996;
+}
+
+/* Navigation/action pills feel tactile. */
+.filter,.mode-badge,.count-pill,.tag{
+  background:rgba(255,255,255,.035);
+  border-color:rgba(255,255,255,.08);
+}
+.mode-badge{
+  padding:9px 13px;
+}
+
+/* Focus keeps its identity while receiving the same premium treatment. */
+.focus-card{
+  background:
+    radial-gradient(500px 280px at 50% 42%,rgba(255,106,42,.065),transparent 70%),
+    #0d1116;
+  border-color:#2a313a;
+}
+.focus-card .focus-label{
+  color:#ff8055;
+}
+.focus-card .primary-btn{
+  box-shadow:0 14px 35px rgba(255,106,42,.17);
+}
+
+/* Inputs and interactive surfaces */
+.setting-input,.focus-duration input,.exam-side-controls textarea{
+  background:#0a0e13;
+  border-color:#29313a;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+}
+.setting-input:focus,.focus-duration input:focus{
+  outline:2px solid rgba(255,106,42,.28);
+  border-color:#ff704c;
+}
+
+/* Desktop open/close composition */
+@media(min-width:761px){
+  .sidebar-toggle.is-open{
+    left:270px;
+  }
+}
+@media(max-width:760px){
+  .sidebar-toggle.is-open{left:min(300px,calc(86vw - 54px))}
+  .content{width:calc(100% - 34px);padding-top:30px}
+  .hero-card{padding:36px 24px;min-height:0}
+  .hero-card h2{font-size:43px}
+}
+
+/* Respect reduced-motion users while preserving a clean static state. */
+@media(prefers-reduced-motion:reduce){
+  .sidebar,.sidebar-toggle,.sidebar-toggle .toggle-icon,.main{transition:none!important}
+}
