@@ -1069,3 +1069,88 @@ body{
     transition:background-color .18s ease,border-color .18s ease,transform .18s ease,color .18s ease;
   }
 }
+
+
+/* Sidebar drawer: hidden by default, opened with a single animated control */
+.sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+  bottom:0;
+  z-index:80;
+  width:252px;
+  transition:width .28s cubic-bezier(.2,.8,.2,1),transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.sidebar.collapsed{
+  width:0;
+  padding-left:0;
+  padding-right:0;
+  border-right:0;
+  overflow:hidden;
+  transform:translateX(-4px);
+}
+.main{
+  margin-left:0;
+  width:100%;
+  transition:margin-left .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1);
+}
+.sidebar:not(.collapsed)~.main{
+  margin-left:252px;
+  width:calc(100% - 252px);
+}
+.sidebar-toggle{
+  position:fixed;
+  left:16px;
+  top:16px;
+  z-index:120;
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #29313a;
+  border-radius:12px;
+  background:#10151b;
+  color:#dce1e7;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,.22);
+  transition:left .28s cubic-bezier(.2,.8,.2,1),background .18s ease,border-color .18s ease,transform .18s ease;
+}
+.sidebar:not(.collapsed)~.sidebar-toggle{}
+.sidebar-toggle:hover{
+  background:#171d23;
+  border-color:#3a444f;
+  transform:translateY(-1px);
+}
+.sidebar-toggle .toggle-icon{
+  position:absolute;
+  display:grid;
+  place-items:center;
+  transition:opacity .18s ease,transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.sidebar-toggle .toggle-menu{opacity:0;transform:rotate(-90deg) scale(.7)}
+.sidebar-toggle .toggle-close{opacity:1;transform:rotate(0) scale(1)}
+.sidebar-toggle.is-closed .toggle-menu{opacity:1;transform:rotate(0) scale(1)}
+.sidebar-toggle.is-closed .toggle-close{opacity:0;transform:rotate(90deg) scale(.7)}
+.sidebar-toggle.is-open{
+  left:16px;
+  background:#10151b;
+}
+.topbar{
+  padding-left:82px;
+}
+@media(max-width:760px){
+  .sidebar,.sidebar.collapsed{width:min(300px,86vw);padding:16px 12px;transform:translateX(-100%)}
+  .sidebar:not(.collapsed){transform:translateX(0)}
+  .sidebar:not(.collapsed)~.main{margin-left:0;width:100%}
+  .sidebar-toggle{left:14px;top:14px;width:42px;height:42px}
+  .topbar{padding-left:70px}
+  .mobile-sidebar-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:70;
+    border:0;
+    background:rgba(0,0,0,.58);
+    backdrop-filter:blur(4px);
+  }
+}
