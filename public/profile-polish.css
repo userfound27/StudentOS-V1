@@ -309,3 +309,90 @@
     width: 0;
   }
 }
+
+/* Profile avatar visual system — orange StudentOS treatment */
+.avatar {
+  position: relative;
+  overflow: hidden;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  flex: 0 0 38px;
+  border: 2px solid #ff704c !important;
+  border-radius: 50%;
+  background: #151922;
+  box-shadow: 0 0 0 2px rgba(255,112,76,.10), 0 6px 18px rgba(0,0,0,.22);
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.profile-image-button {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  flex: 0 0 112px;
+  padding: 0;
+  border: 2px solid #ff704c !important;
+  border-radius: 50% !important;
+  background: #12161f;
+  color: #c7cfdd;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px rgba(255,112,76,.08), 0 12px 28px rgba(0,0,0,.28);
+}
+.profile-image-button:hover {
+  border-color: #ff8a69 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 4px rgba(255,112,76,.10), 0 14px 32px rgba(0,0,0,.32);
+}
+.profile-image-button img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.profile-image-button > svg {
+  width: 34px;
+  height: 34px;
+}
+.profile-image-button .profile-edit-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  width: 31px;
+  height: 31px;
+  min-width: 31px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid #11151d;
+  border-radius: 50%;
+  background: #ff704c;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.30);
+}
+.profile-image-button .profile-edit-badge svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.2;
+}
+@media (max-width: 600px) {
+  .profile-image-button {
+    width: 96px;
+    height: 96px;
+    flex-basis: 96px;
+  }
+  .profile-image-button .profile-edit-badge {
+    right: 4px;
+    bottom: 4px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+}
