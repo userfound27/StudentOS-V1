@@ -363,6 +363,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
    <div className="landing-close-actions"><button className="landing-primary-v2" onClick={()=>p.openAuth("signup")}>Get started <ChevronRight size={17}/></button><button className="landing-text-v2" onClick={p.onAnonymous}>Try anonymously <ArrowUpRight size={16}/></button></div>
   </section>
  </main>
+ </>
 }
 function pageTitle(p:Page){return {dashboard:"Dashboard",study:"Study",exams:"Exams",scores:"Scores",focus:"Focus",journey:"Journey",settings:"Settings"}[p]}
 
