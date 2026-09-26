@@ -55,7 +55,7 @@ async function saveCloudData(userId:string,data:SavedData){
 }
 
 function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"account";onExit:()=>Promise<void>|void;onSignIn:()=>void;onDeleteAccount:()=>Promise<string>}){
- const [page,setPage]=useState<Page>(()=>{const saved=sessionStorage.getItem("studentos-page");return saved&&["dashboard","study","exams","scores","focus","journey","settings"].includes(saved)?saved as Page:"dashboard"}),[mobileNav,setMobileNav]=useState(false),[sidebarCollapsed,setSidebarCollapsed]=useState(false),[selectedExamId,setSelectedExamId]=useState<number|null>(null);
+ const [page,setPage]=useState<Page>(()=>{const saved=sessionStorage.getItem("studentos-page");return saved&&["dashboard","study","exams","scores","focus","journey","settings"].includes(saved)?saved as Page:"dashboard"}),[sidebarCollapsed,setSidebarCollapsed]=useState(true),[selectedExamId,setSelectedExamId]=useState<number|null>(null);
  const initial=window.__studentosData||blankData();
  const [tasks,setTasks]=useState(initial.tasks),[exams,setExams]=useState(initial.exams),[scores,setScores]=useState(initial.scores);
  const [journey,setJourney]=useState(initial.journey),[classLevel,setClassLevel]=useState(initial.classLevel||""),[displayName,setDisplayName]=useState(initial.displayName||"Student"),[avatarUrl,setAvatarUrl]=useState(initial.avatarUrl||""),[showTask,setShowTask]=useState(false),[editingTask,setEditingTask]=useState<Task|null>(null),[showScore,setShowScore]=useState(false),[showExam,setShowExam]=useState(false);
@@ -74,8 +74,11 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
  const navigate=(p:Page)=>{setPage(p);setMobileNav(false)}; const profileAction=()=>{navigate("settings")};
  const saveProfile=async(name:string,file?:File)=>{if(mode!=="account"||!supabase||!window.__studentosUserId)return "Sign in to update your profile.";const nextName=name.trim().slice(0,60);if(!nextName)return "Enter a display name.";let nextAvatar=avatarUrl;if(file){const allowed=["image/jpeg","image/png","image/webp","image/gif"];if(!allowed.includes(file.type))return "Choose a JPG, PNG, WebP, or GIF image.";if(file.size>5*1024*1024)return "Choose an image smaller than 5 MB.";const path=window.__studentosUserId+"/avatar";const bucket=supabase.storage.from("studentos-avatars");const {error:uploadError}=await bucket.upload(path,file,{upsert:true,contentType:file.type,cacheControl:"3600"});if(uploadError)return "Image upload failed: "+uploadError.message;const {data:urlData}=bucket.getPublicUrl(path);nextAvatar=urlData.publicUrl+"?v="+Date.now();}const {error:authError}=await supabase.auth.updateUser({data:{display_name:nextName,avatar_url:nextAvatar}});if(authError)return "Profile save failed: "+authError.message;setDisplayName(nextName);setAvatarUrl(nextAvatar);return "";};
  return <div className="app-shell">
-  <aside className={(mobileNav?"sidebar open ":"sidebar ")+(sidebarCollapsed?"collapsed":"")}>
-   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div><button className="icon-btn mobile-close" aria-label="Close navigation" onClick={()=>{if(window.matchMedia("(max-width: 760px)").matches){setMobileNav(false)}else{setSidebarCollapsed(v=>!v)}}}><X size={18}/></button></div>
+  <button className={"sidebar-toggle "+(sidebarCollapsed?"is-closed":"is-open")} aria-label={sidebarCollapsed?"Open navigation":"Close navigation"} aria-expanded={!sidebarCollapsed} onClick={()=>setSidebarCollapsed(v=>!v)}>
+   <span className="toggle-icon toggle-menu"><Menu size={21}/></span><span className="toggle-icon toggle-close"><X size={21}/></span>
+  </button>
+  <aside className={"sidebar "+(sidebarCollapsed?"collapsed":"")}>
+   <div className="brand"><div className="brand-mark"><Command size={19}/></div><div><strong>StudentOS</strong><span>your school operating system</span></div></div>
    <nav>
     <NavItem icon={<LayoutDashboard size={18}/>} label="Dashboard" active={page==="dashboard"} onClick={()=>navigate("dashboard")}/>
     <NavItem icon={<BookOpen size={18}/>} label="Study" active={page==="study"} onClick={()=>navigate("study")}/>
@@ -86,7 +89,7 @@ function StudentOSApp({mode,onExit,onSignIn,onDeleteAccount}:{mode:"anonymous"|"
    </nav>
    <div className="sidebar-bottom"><div className="free-pill"><Zap size={15}/> Pricing</div><NavItem icon={<Settings size={18}/>} label="Settings" active={page==="settings"} onClick={()=>navigate("settings")}/></div>
   </aside>
-  {mobileNav&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={()=>setMobileNav(false)}/>}
+  {!sidebarCollapsed&&<button className="mobile-sidebar-backdrop" aria-label="Close navigation" onClick={()=>setSidebarCollapsed(true)}/>}
   <main className="main">
    <header className="topbar"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(true)}><Menu size={21}/></button><div><div className="eyebrow">STUDENTOS</div><h1>{pageTitle(page)}</h1></div><div className="top-actions"><div className="mode-badge"><span className="dot"/>{mode==="account"?"Saved account":"Anonymous session"}</div><button className="avatar" onClick={profileAction} title="Open profile settings">{avatarUrl?<img src={avatarUrl} alt="Profile"/>:displayName.slice(0,1).toUpperCase()||"S"}</button></div></header>
    <div className="content">
