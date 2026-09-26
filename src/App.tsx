@@ -312,7 +312,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
  const drift=(speed:number)=>({transform:`translate3d(0,${Math.min(120,scrollY*speed)}px,0)`});
  return <>
   {intro&&<div className="landing-intro-v2" aria-hidden="true"><div className="landing-intro-mark"><Command size={34}/></div><div className="landing-intro-word">STUDENTOS</div><div className="landing-intro-line"/></div>}
-  <main className="welcome-main-v2">\n  <div className="scroll-object-v2" style={{transform:`translate3d(0,${Math.min(180,scrollY*.22)}px,0) rotate(${Math.min(28,scrollY*.035)}deg)`}}><div className="scroll-object-core"><Command size={20}/></div></div>
+  <main className="welcome-main-v2"><div className="scroll-object-v2" style={{transform:`translate3d(0,${Math.min(180,scrollY*.22)}px,0) rotate(${Math.min(28,scrollY*.035)}deg)`}}><div className="scroll-object-core"><Command size={20}/></div></div>
   <section className="landing-hero-v2">
    <div className="landing-hero-copy">
     <div className="landing-eyebrow"><span/> STUDENTOS · YOUR SCHOOL OS</div>
@@ -324,7 +324,7 @@ function Welcome(p:{onAnonymous:()=>void;openAuth:(m:"signin"|"signup")=>void;on
     </div>
     <div className="landing-proof-v2"><span>NO CARD REQUIRED</span><i/> <span>ANONYMOUS FIRST</span><i/> <span>SYNC WHEN YOU SIGN IN</span></div>
    </div>
-   <div className="landing-stage-v2">\n    <div className="stage-orbit stage-orbit-a" style={drift(-.08)}/><div className="stage-orbit stage-orbit-b" style={drift(.12)}/>
+   <div className="landing-stage-v2"><div className="stage-orbit stage-orbit-a" style={drift(-.08)}/><div className="stage-orbit stage-orbit-b" style={drift(.12)}/>
     <div className="stage-glow"/>
     <div className="stage-label">LIVE WORKSPACE <span>●</span></div>
     <div className="stage-window">
