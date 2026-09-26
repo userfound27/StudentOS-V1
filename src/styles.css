@@ -156,3 +156,49 @@
 .focus-duration input:focus{outline:2px solid #ff704c;outline-offset:1px;border-color:#ff704c}
 .focus-duration input:disabled{opacity:.6;cursor:not-allowed}
 .focus-duration span{color:#737c8e;font-size:11px}
+
+/* Mobile navigation reliability */
+.mobile-sidebar-backdrop{display:none}
+@media(max-width:760px){
+  .mobile-sidebar-backdrop{display:block;position:fixed;inset:0;border:0;background:rgba(0,0,0,.42);z-index:19;cursor:pointer;padding:0}
+  .sidebar{z-index:20}
+  .sidebar.open{transform:translateX(0)}
+}
+
+/* Exam progress workspace */
+.exam-card-clickable{cursor:pointer;transition:transform .16s,border-color .16s,background .16s}
+.exam-card-clickable:hover{transform:translateY(-2px);border-color:#4a405f;background:#10141d}
+.exam-meta{display:flex;justify-content:space-between;gap:10px;margin-top:13px;color:#737b8e;font-size:9px;flex-wrap:wrap}
+.exam-detail{padding:22px}
+.exam-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.exam-detail-head h3{margin:6px 0 4px;font-size:18px}
+.exam-detail-head p{margin:0;color:#737b8e;font-size:10px}
+.exam-progress-hero{margin-top:20px;padding:17px;border:1px solid #292f3b;background:#10141c;border-radius:12px}
+.exam-progress-hero>div:first-child{display:flex;align-items:baseline;justify-content:space-between}
+.exam-progress-hero span{color:#737b8e;font-size:10px}
+.exam-progress-hero strong{font-size:25px;color:#ff9b7f}
+.exam-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:10px}
+.exam-kpis>div{border:1px solid #242a35;background:#0c1017;border-radius:10px;padding:12px}
+.exam-kpis span,.exam-kpis small{display:block;color:#737b8e;font-size:9px}
+.exam-kpis strong{display:inline-block;font-size:18px;margin:5px 4px 2px 0}
+.exam-detail-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-top:14px}
+.exam-detail-grid>section{border:1px solid #222833;background:#0c1017;border-radius:12px;padding:15px}
+.exam-detail-grid h4{margin:0;font-size:13px}
+.exam-detail-grid .panel-head{align-items:flex-start}
+.lesson-list{display:grid;gap:5px;margin-top:10px}
+.lesson-row{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #202630;border-radius:9px}
+.lesson-row.done{opacity:.6}
+.lesson-row.done span{text-decoration:line-through}
+.lesson-row span{flex:1;font-size:11px}
+.lesson-row .icon-btn{width:28px;height:28px}
+.add-lesson{display:flex;gap:7px;margin-top:10px}
+.add-lesson input{flex:1;min-width:0}
+.exam-side-controls textarea{width:100%;min-height:90px;resize:vertical;border:1px solid #303642;background:#0a0d13;color:#e8ebf3;border-radius:8px;padding:9px 10px;font:inherit;font-size:12px}
+.form-help{display:block;color:#737b8e;font-size:9px;line-height:1.5;margin-top:8px}
+@media(max-width:760px){
+  .exam-detail{padding:15px}
+  .exam-kpis{grid-template-columns:repeat(2,1fr)}
+  .exam-detail-grid{grid-template-columns:1fr}
+  .add-lesson{align-items:stretch}
+  .add-lesson .primary-btn{padding-left:10px;padding-right:10px}
+}
