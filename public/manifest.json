@@ -1,0 +1,13 @@
+{
+  "name":"StudentOS — Student Productivity & Study Planner",
+  "short_name":"StudentOS",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "background_color":"#090b12",
+  "theme_color":"#090b12",
+  "description":"A personal operating system for students.",
+  "icons":[
+    {"src":"/studentos-favicon.png","sizes":"any","type":"image/png","purpose":"any maskable"}
+  ]
+}
